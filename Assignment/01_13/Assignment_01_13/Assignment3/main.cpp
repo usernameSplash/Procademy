@@ -18,7 +18,7 @@ void ControlEachByteOfNumber()
 		printf("Value (0~255): ");
 		scanf("%hhu", &tempValue);
 
-		value = tempValue << ((bytePosition - 1) * 8);				// Shift Input Value to Correct Byte Zone.
+		value = tempValue << ((bytePosition - 1) * 8);			// Shift Input Value to Correct Byte Zone.
 		value = ~(0) & value;									// Make All Other Bits <1> for Change Value on Only Specific Byte Zone.
 
 		number = number & ~(0xFF << ((bytePosition - 1) * 8));	// Erase Bits of `number` on Specific Byte Zone.
