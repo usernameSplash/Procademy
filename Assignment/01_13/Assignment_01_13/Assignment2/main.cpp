@@ -8,8 +8,8 @@ void ControlEachBitOfNumber()
 	number = 0;
 	
 	while (true) {
-		int bitPosition;
-		int bitStatus;
+		uint16_t bitPosition;
+		bool bitStatus;
 
 		std::cout << "비트 위치: ";
 		std::cin >> bitPosition;
