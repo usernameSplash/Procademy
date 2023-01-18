@@ -10,26 +10,6 @@ void Test()
 
 	switch (message)
 	{
-	case 10:
-		x = 0;
-		break;
-
-	case 11:
-		x = 0;
-		break;
-
-	case 12:
-		x = 0;
-		break;
-
-	case 13:
-		x = 0;
-		break;
-
-	case 14:
-		x = 0;
-		break;
-
 	case 16:
 		x = 0;
 		break;
@@ -47,6 +27,26 @@ void Test()
 		break;
 
 	case 20:
+		x = 0;
+		break;
+
+	case 10:
+		x = 0;
+		break;
+
+	case 11:
+		x = 0;
+		break;
+
+	case 12:
+		x = 0;
+		break;
+
+	case 13:
+		x = 0;
+		break;
+
+	case 14:
 		x = 0;
 		break;
 
