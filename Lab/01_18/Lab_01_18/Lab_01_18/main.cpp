@@ -9,6 +9,8 @@ void Test(void)
 	int x;
 	int* p;
 
+	x = 0xff;
+
 	p = &x;
 	*p = 0;
 
