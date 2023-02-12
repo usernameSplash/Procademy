@@ -6,9 +6,14 @@
 int main(void)
 {
 	printf("=== Image Converter ===\n");
+	printf("Input Images must be loacated in './input' directory.\n");
 
 	while (1)
 	{
+		char inputFileName1[LINE_LENGTH + 10];
+		char inputFileName2[LINE_LENGTH + 10];
+		char outputFileName[LINE_LENGTH + 10];
+
 		char line[LINE_LENGTH];
 		int input = -1;
 
@@ -23,50 +28,52 @@ int main(void)
 
 		switch (input)
 		{
-			char fileName1[LINE_LENGTH];
-			char fileName2[LINE_LENGTH];
-			char fileName3[LINE_LENGTH];
 		case 1:
 			printf("Blending File Name 1 : ");
 			fgets(line, LINE_LENGTH, stdin);
-			if (sscanf(line, "%s", &fileName1) == 0)
+			if (sscanf(line, "%s", &line) == 0)
 			{
 				goto wrong_file_name;
 			}
+			sprintf(inputFileName1, "./input/%s", line);
 			
 			printf("Blending File Name 2 : ");
 			fgets(line, LINE_LENGTH, stdin);
-			if (sscanf(line, "%s", &fileName2) == 0)
+			if (sscanf(line, "%s", &line) == 0)
 			{
 				goto wrong_file_name;
 			}
+			sprintf(inputFileName2, "./input/%s", line);
 
 			printf("Output File Name 3 : ");
 			fgets(line, LINE_LENGTH, stdin);
-			if (sscanf(line, "%s", &fileName3) == 0)
+			if (sscanf(line, "%s", &line) == 0)
 			{
 				goto wrong_file_name;
 			}
+			sprintf(outputFileName, "./output/%s", line);
 
-			AlphaBlendTwoImages(fileName1, fileName2, fileName3);
+			AlphaBlendTwoImages(inputFileName1, inputFileName2, outputFileName);
 			break;
 
 		case 2:
 			printf("Apply Gray-Scaling File Name : ");
 			fgets(line, LINE_LENGTH, stdin);
-			if (sscanf(line, "%s", &fileName1) == 0)
+			if (sscanf(line, "%s", &line) == 0)
 			{
 				goto wrong_file_name;
 			}
+			sprintf(inputFileName1, "./input/%s", line);
 
 			printf("Output File Name : ");
 			fgets(line, LINE_LENGTH, stdin);
-			if (sscanf(line, "%s", &fileName2) == 0)
+			if (sscanf(line, "%s", &line) == 0)
 			{
 				goto wrong_file_name;
 			}
+			sprintf(outputFileName, "./output/%s", line);
 
-			GrayScaleTransform(fileName1, fileName2);
+			GrayScaleTransform(inputFileName1, outputFileName);
 			break;
 
 		default:

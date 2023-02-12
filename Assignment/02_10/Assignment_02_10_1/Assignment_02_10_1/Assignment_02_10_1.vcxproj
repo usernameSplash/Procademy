@@ -139,10 +139,6 @@
   <ItemGroup>
     <ClInclude Include="ImageConverter.h" />
   </ItemGroup>
-  <ItemGroup>
-    <Image Include="sample.bmp" />
-    <Image Include="sample2.bmp" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

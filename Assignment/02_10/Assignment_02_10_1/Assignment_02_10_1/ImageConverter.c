@@ -13,7 +13,7 @@ int OpenAndReadBitMapFile(const char* fileName, BitMapFileInfo_t* out_BitMapFile
 		return -1;
 	}
 
-	out_BitMapFile->fp = fopen(fileName, "r");
+	out_BitMapFile->fp = fopen(fileName, "rb");
 
 	if (out_BitMapFile->fp == NULL)
 	{
@@ -53,7 +53,7 @@ void AlphaBlendTwoImages(const char* inputFileName1, const char* inputFileName2,
 		return;
 	}
 
-	outputFile = fopen(outputFileName, "w");
+	outputFile = fopen(outputFileName, "wb");
 
 	//outputFileHeader.bfType = 0x4d42; //little endian of "BM"
 	//outputFileHeader.bfSize = sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER) + (inputFile1.infoHeader->biWidth * inputFile1.infoHeader->biHeight * 4);
@@ -129,7 +129,7 @@ void GrayScaleTransform(const char* inputFileName, const char* outputFileName)
 		return;
 	}
 
-	outputFile = fopen(outputFileName, "w");
+	outputFile = fopen(outputFileName, "wb");
 
 	fwrite(inputFile.fileHeader, 1, sizeof(BITMAPFILEHEADER), outputFile);
 	fwrite(inputFile.infoHeader, 1, sizeof(BITMAPINFOHEADER), outputFile);
