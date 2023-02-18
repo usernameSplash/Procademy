@@ -1,7 +1,16 @@
-#include <stdio.h>
+#define  _WIN32_WINNT 0x0600
+
+#include <cstdio>
 #include <memory.h>
 #include <Windows.h>
+#include <sysinfoapi.h>
+#include <timeapi.h>
+
 #include "Console.h"
+#include "Logger.h"
+#include "LoadData.h"
+
+#pragma comment(lib, "Winmm.lib") // for using timeGetTime function
 
 //--------------------------------------------------------------------
 // 화면 깜빡임을 없애기 위한 화면 버퍼.
@@ -80,50 +89,57 @@ void Buffer_Clear(void);
 void Sprite_Draw(int iX, int iY, char chSprite);
 
 
-
-
-
-
-
-
-
 int g_iX = 0;
 
-void main(void)
+int main(void)
 {
+	const DWORD TIME_PER_FRAME = 1000 / 60;
+	timeBeginPeriod(1);
+
+	DWORD prevTime;
+	DWORD curTime;
+	DWORD deltaTime;
+
+	int iX = 0;  
+	int iY = 0;
+
 	cs_Initial();
+	PrintLog("Program Start", error_t::NOTE);
 
-	//--------------------------------------------------------------------
-	// 게임의 메인 루프
-	// 이 루프가  1번 돌면 1프레임 이다.
-	//--------------------------------------------------------------------
-
-	//  A 글자 오른쪽 이동샘플을 위한 예시 데이터  (삭제요망)
-	// int iX = 0;   
-
+	LoadAllStageFileName();
+	curTime = timeGetTime();
 	while (1)
 	{
-		// 1. 키보드 입력부
 
+		iX++;
+		iX = iX % dfSCREEN_WIDTH;
+		iY++;
+		iY = iY % dfSCREEN_HEIGHT;
 
-		// 2. 로직부 
+		Buffer_Clear();
+		Sprite_Draw(iX, iY, 'A');
+		Buffer_Flip();
 
-			//  A 글자 오른쪽 이동샘플을 위한 예시 데이터  (삭제요망)
-			// iX++;
+		prevTime = curTime;
+		curTime = timeGetTime();
 
+		if (curTime < prevTime)
+		{
+			deltaTime = MAXDWORD - prevTime + curTime;
+		}
+		else
+		{
+			deltaTime = curTime - prevTime;
+		}
 
-		// 3. 랜더부
-			/*  예시
-				// 스크린 버퍼를 지움
-				Buffer_Clear();
-				// 스크린 버퍼에 객체들 출력
-				Sprite_Draw(iX, 10, 'A');
-				// 스크린 버퍼를 화면으로 출력
-				Buffer_Flip();
-			*/
-
-		// 프레임 맞추기용 대기 Sleep(X)
+		if (deltaTime < TIME_PER_FRAME)
+		{
+			Sleep(TIME_PER_FRAME - deltaTime);
+		}
 	}
+
+	PrintLog("Program End Successfully", error_t::NOTE);
+	return 0;
 }
 
 
