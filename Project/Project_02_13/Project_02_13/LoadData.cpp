@@ -8,7 +8,7 @@
 
 #define STAGE_NAME_LEN_MAX 20
 
-static char(*s_StageFileNames)[STAGE_NAME_LEN_MAX];
+static char(*s_StageFileNames)[STAGE_NAME_LEN_MAX]; //! must be double pointer.
 
 
 /*

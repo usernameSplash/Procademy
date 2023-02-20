@@ -5,6 +5,32 @@
 #include <Windows.h>
 
 //--------------------------------------------------------------------
+// 화면 깜빡임을 없애기 위한 화면 버퍼.
+// 게임이 진행되는 상황을 매번 화면을 지우고 비행기 찍고, 지우고 찍고,
+// 하게 되면 화면이 깜빡깜빡 거리게 된다.
+//
+// 그러므로 화면과 똑같은 크기의 메모리를 할당한 다음에 화면에 바로 찍지않고
+// 메모리(버퍼)상에 그림을 그리고 메모리의 화면을 그대로 화면에 찍어준다.
+//
+// 이렇게 해서 화면을 매번 지우고, 그리고, 지우고, 그리고 하지 않고
+// 메모리(버퍼)상의 그림을 화면에 그리는 작업만 하게 되어 깜박임이 없어진다.
+//
+// 버퍼의 각 줄 마지막엔 NULL 을 넣어 문자열로서 처리하며, 
+// 한줄한줄을 printf 로 찍어나갈 것이다.
+//
+// for ( N = 0 ~ height )
+// {
+// 	  cs_MoveCursor(0, N);
+//    printf(szScreenBuffer[N]);
+// }
+//
+// 줄바꿈에 printf("\n") 을 쓰지 않고 커서좌표를 이동하는 이유는
+// 화면을 꽉 차게 출력하고 줄바꿈을 하면 2칸이 내려가거나 화면이 밀릴 수 있으므로
+// 매 줄 출력마다 좌표를 강제로 이동하여 확실하게 출력한다.
+//--------------------------------------------------------------------
+static char s_szScreenBuffer[dfSCREEN_HEIGHT][dfSCREEN_WIDTH];
+
+//--------------------------------------------------------------------
 // 버퍼의 내용을 화면으로 찍어주는 함수.
 //
 // 적군,아군,총알 등을 szScreenBuffer 에 넣어주고, 
@@ -16,7 +42,7 @@ void Buffer_Flip(void)
 	for (iCnt = 0; iCnt < dfSCREEN_HEIGHT; iCnt++)
 	{
 		cs_MoveCursor(0, iCnt);
-		printf(szScreenBuffer[iCnt]);
+		printf(s_szScreenBuffer[iCnt]);
 	}
 }
 
@@ -30,11 +56,11 @@ void Buffer_Flip(void)
 void Buffer_Clear(void)
 {
 	int iCnt;
-	memset(szScreenBuffer, ' ', dfSCREEN_WIDTH * dfSCREEN_HEIGHT);
+	memset(s_szScreenBuffer, ' ', dfSCREEN_WIDTH * dfSCREEN_HEIGHT);
 
 	for (iCnt = 0; iCnt < dfSCREEN_HEIGHT; iCnt++)
 	{
-		szScreenBuffer[iCnt][dfSCREEN_WIDTH - 1] = '\0';
+		s_szScreenBuffer[iCnt][dfSCREEN_WIDTH - 1] = '\0';
 	}
 
 }
@@ -49,5 +75,5 @@ void Sprite_Draw(int iX, int iY, char chSprite)
 	if (iX < 0 || iY < 0 || iX >= dfSCREEN_WIDTH - 1 || iY >= dfSCREEN_HEIGHT)
 		return;
 
-	szScreenBuffer[iY][iX] = chSprite;
+	s_szScreenBuffer[iY][iX] = chSprite;
 }
