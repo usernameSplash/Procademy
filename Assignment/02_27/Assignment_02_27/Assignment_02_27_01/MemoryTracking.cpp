@@ -9,7 +9,7 @@
 
 static std::unordered_map<void*, AllocInfo> blocks(64);
 
-void* operator new(size_t size, const char* fileName, size_t fileLine)
+void* operator new(size_t size, const char* fileName, int fileLine)
 {
 	void* ptr = malloc(size);
 
@@ -17,7 +17,7 @@ void* operator new(size_t size, const char* fileName, size_t fileLine)
 
 	allocInfo.ptr = ptr;
 	allocInfo.size = size;
-	strcpy(allocInfo.filename, fileName);
+	strncpy(allocInfo.filename, fileName, 128);
 	allocInfo.line = fileLine;
 
 	blocks.insert({ ptr, allocInfo });
@@ -25,7 +25,7 @@ void* operator new(size_t size, const char* fileName, size_t fileLine)
 	return ptr;
 }
 
-void* operator new[](size_t size, const char* fileName, size_t fileLine)
+void* operator new[](size_t size, const char* fileName, int fileLine)
 {
 	void* ptr = malloc(size);
 
@@ -33,7 +33,7 @@ void* operator new[](size_t size, const char* fileName, size_t fileLine)
 
 	allocInfo.ptr = ptr;
 	allocInfo.size = size;
-	strcpy(allocInfo.filename, fileName);
+	strncpy(allocInfo.filename, fileName, 128);
 	allocInfo.line = fileLine;
 
 	blocks.insert({ ptr, allocInfo });
@@ -41,7 +41,7 @@ void* operator new[](size_t size, const char* fileName, size_t fileLine)
 	return ptr;
 }
 
-void operator delete(void* ptr, const char* fileName, size_t fileLine)
+void operator delete(void* ptr, const char* fileName, int fileLine)
 {
 	eMemoryErrorType e;
 
@@ -68,7 +68,7 @@ void operator delete(void* ptr, const char* fileName, size_t fileLine)
 	}
 }
 
-void operator delete[](void* ptr, const char* fileName, size_t fileLine)
+void operator delete[](void* ptr, const char* fileName, int fileLine)
 {
 	eMemoryErrorType e;
 
@@ -95,7 +95,7 @@ void operator delete[](void* ptr, const char* fileName, size_t fileLine)
 	}
 }
 
-void PrintMemoryLog(eMemoryErrorType error, AllocInfo* allocInfo, void* ptr, const char* fileName, size_t fileLine)
+void PrintMemoryLog(eMemoryErrorType error, AllocInfo* allocInfo, void* ptr, const char* fileName, int fileLine)
 {
 	static FILE* logFile = nullptr;
 	static char logFileName[50] = "";
@@ -117,13 +117,13 @@ void PrintMemoryLog(eMemoryErrorType error, AllocInfo* allocInfo, void* ptr, con
 	switch (error)
 	{
 	case eMemoryErrorType::NOALLOC:
-		fscanf(logFile, "%-8s [%p]", "NOALLOC", ptr);
+		fprintf(logFile, "%-8s [%p]", "NOALLOC", ptr);
 		break;
 	case eMemoryErrorType::ARRAY:
-		fscanf(logFile, "%-8s [%p] [%8d] %s : %d", "ARRAY", allocInfo->ptr, allocInfo->size, fileName, fileLine);
+		fprintf(logFile, "%-8s [%p] [%8zu] %s : %d", "ARRAY", allocInfo->ptr, allocInfo->size, fileName, fileLine);
 		break;
 	case eMemoryErrorType::LEAK:
-		fscanf(logFile, "%-8s [%p] [%8d] %s : %d", "LEAK", allocInfo->ptr, allocInfo->size, fileName, fileLine);
+		fprintf(logFile, "%-8s [%p] [%8zu] %s : %d", "LEAK", allocInfo->ptr, allocInfo->size, fileName, fileLine);
 		break;
 	}
 

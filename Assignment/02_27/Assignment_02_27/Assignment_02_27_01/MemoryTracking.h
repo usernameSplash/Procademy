@@ -3,12 +3,10 @@
 
 #ifdef MEMORY_TRACKING
 
-void* operator new(size_t size, const char* fileName, size_t fileLine);
-void* operator new[](size_t size, const char* fileName, size_t fileLine);
-void operator delete(void* ptr, const char* fileName, size_t fileLine);
-void operator delete[](void* ptr, const char* fileName, size_t fileLine);
-
-void PrintMemoryLog(eMemoryErrorType error, AllocInfo* allocInfo, void* ptr, const char* fileName, size_t fileLine);
+void* operator new(size_t size, const char* fileName, int fileLine);
+void* operator new[](size_t size, const char* fileName, int fileLine);
+void operator delete(void* ptr, const char* fileName, int fileLine);
+void operator delete[](void* ptr, const char* fileName, int fileLine);
 
 enum class eMemoryErrorType
 {
@@ -21,10 +19,12 @@ enum class eMemoryErrorType
 struct AllocInfo
 {
 	void* ptr;
-	int size;
+	size_t size;
 	char filename[128];
 	int line;
 };
+
+void PrintMemoryLog(eMemoryErrorType error, AllocInfo* allocInfo, void* ptr, const char* fileName, int fileLine);
 
 #endif // MEMORY_TRACKING
 
