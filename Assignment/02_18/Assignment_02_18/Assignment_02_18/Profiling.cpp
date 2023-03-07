@@ -8,7 +8,7 @@
 #include <utility>
 #include <cstdlib>
 
-#define DEFAULT_PROFILE_NUM 64
+#define DEFAULT_PROFILE_NUM 32
 
 static std::unordered_map<std::string, Profile_t> s_profileMap;
 
@@ -81,10 +81,10 @@ void ProfileDataOutText(const char* fileName)
 {
 	std::ofstream file(fileName, std::ios::binary);
 
-	file << std::setw(128) << std::setfill('-') << "\n";
+	file << std::setw(132) << std::setfill('-') << "\n";
 
-	file << std::setw(64) << std::setfill(' ') << "Name  |" << std::setw(20) << "Average  |" << std::setw(20) << "Min  |" << std::setw(20) << "Max  |" <<
-		std::setw(20) << "Call  |" << std::endl;
+	file << std::setw(DEFAULT_PROFILE_NUM) << std::setfill(' ') << "Name" << "  |" << std::setw(20) << "Average" << "  |" << std::setw(20) << "Min" << "  |" << std::setw(20) << "Max" << "  |" <<
+		std::setw(20) << "Call" << std::endl;
 
 	for (std::unordered_map<std::string, Profile_t>::const_iterator it = s_profileMap.begin(); it != s_profileMap.end(); it++)
 	{
@@ -98,11 +98,11 @@ void ProfileDataOutText(const char* fileName)
 		minTime = (double)it->second.minTime[0] / s_frequency.QuadPart;
 		maxTime = (double)it->second.maxTime[0] / s_frequency.QuadPart;
 
-		file << std::setw(64) << std::setfill(' ') << it->first << "  |" << std::setw(20) << avgTime * 1000000 << "§Á  |" << std::setw(20) << minTime * 1000000 << "§Á  |" << std::setw(20) << maxTime * 1000000 << "§Á  |" <<
+		file << std::setw(DEFAULT_PROFILE_NUM) << std::setfill(' ') << it->first << "  |" << std::setw(18) << avgTime * 1000000 << "§Á  |" << std::setw(18) << minTime * 1000000 << "§Á  |" << std::setw(18) << maxTime * 1000000 << "§Á  |" <<
 			std::setw(20) << it->second.callTime << std::endl;
 	}
 
-	file << std::setw(128) << std::setfill('-') << "\n";
+	file << std::setw(132) << std::setfill('-') << "\n";
 	file << std::endl;
 }
 
