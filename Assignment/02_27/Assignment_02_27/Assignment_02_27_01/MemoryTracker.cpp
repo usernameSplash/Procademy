@@ -5,7 +5,9 @@
 
 #include "MemoryTracker.h" 
 
-MemoryTracker g_MemoryTracker;
+#undef new
+
+static MemoryTracker s_MemoryTracker;
 
 MemoryTracker::MemoryTracker(const char* outputFileName)
 {
@@ -131,20 +133,20 @@ bool MemoryTracker::Delete(void* ptr, bool bArray)
 void* operator new(size_t size, const char* fileName, size_t line)
 {
 	void* ptr = malloc(size);
-	g_MemoryTracker.New(ptr, fileName, line, size, false);
+	s_MemoryTracker.New(ptr, fileName, line, size, false);
 	return ptr;
 }
 
 void* operator new[](size_t size, const char* fileName, size_t line)
 {
 	void* ptr = malloc(size);
-	g_MemoryTracker.New(ptr, fileName, line, size, true);
+	s_MemoryTracker.New(ptr, fileName, line, size, true);
 	return ptr;
 }
 
 void operator delete(void* ptr)
 {
-	if (g_MemoryTracker.Delete(ptr, false))
+	if (s_MemoryTracker.Delete(ptr, false))
 	{
 		free(ptr);
 	}
@@ -152,7 +154,7 @@ void operator delete(void* ptr)
 
 void operator delete[](void* ptr)
 {
-	if (g_MemoryTracker.Delete(ptr, true))
+	if (s_MemoryTracker.Delete(ptr, true))
 	{
 		free(ptr);
 	}

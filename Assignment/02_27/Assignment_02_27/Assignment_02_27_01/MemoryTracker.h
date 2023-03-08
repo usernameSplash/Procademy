@@ -44,5 +44,5 @@ private:
 	friend void operator delete[](void* ptr);
 };
 
-//#define new new(__FILE__, __LINE__)
+#define new new(__FILE__, __LINE__)
 // #define delete ... // there is no delete define because we can't call overloaded delete explicitly.

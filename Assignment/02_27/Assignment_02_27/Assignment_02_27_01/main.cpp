@@ -2,7 +2,6 @@
 
 #include "MemoryTracker.h"
 
-#define new new(__FILE__, __LINE__)
 class Base
 {
 public:
