@@ -179,10 +179,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             g_curY = GET_Y_LPARAM(lParam);
 
             InvalidateRect(hWnd, NULL, false);
-
-
-            g_oldX = g_curX;
-            g_oldY = g_curY;
         }
         break;
 
@@ -200,6 +196,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 LineTo(hdc, g_curX, g_curY);
 
                 SelectObject(hdc, hPenOld);
+
+                g_oldX = g_curX;
+                g_oldY = g_curY;
             }
 
             EndPaint(hWnd, &ps);
