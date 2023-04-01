@@ -1,7 +1,10 @@
 #pragma once
-class BaseScene
+
+class IBaseScene
 {
-public:
+protected:
 	virtual void Update() = 0;
+
+	friend class SceneManager;
 };
 

@@ -1,5 +1,7 @@
 #include "ConsoleManager.h"
 
+ConsoleManager ConsoleManager::sInstance;
+
 ConsoleManager::ConsoleManager()
 {
 	CONSOLE_CURSOR_INFO stConsoleCursor;
@@ -7,8 +9,8 @@ ConsoleManager::ConsoleManager()
 	stConsoleCursor.bVisible = FALSE;
 	stConsoleCursor.dwSize = 1;
 
-	hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
-	SetConsoleCursorInfo(hConsole, &stConsoleCursor);
+	mhConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+	SetConsoleCursorInfo(mhConsole, &stConsoleCursor);
 }
 
 ConsoleManager::~ConsoleManager()
@@ -17,8 +19,7 @@ ConsoleManager::~ConsoleManager()
 
 ConsoleManager* ConsoleManager::GetInstance(void)
 {
-	static ConsoleManager instance;
-	return &instance;
+	return &sInstance;
 }
 
 void ConsoleManager::MoveCursor(int x, int y)
@@ -27,11 +28,11 @@ void ConsoleManager::MoveCursor(int x, int y)
 	targetCoord.X = x;
 	targetCoord.Y = y;
 
-	SetConsoleCursorPosition(hConsole, targetCoord);
+	SetConsoleCursorPosition(mhConsole, targetCoord);
 }
 
 void ConsoleManager::ClearScreen(void)
 {
 	DWORD dw;
-	FillConsoleOutputCharacter(hConsole, ' ', 100 * 100, { 0, 0 }, &dw);
+	FillConsoleOutputCharacter(mhConsole, ' ', 100 * 100, { 0, 0 }, &dw);
 }

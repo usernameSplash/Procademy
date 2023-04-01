@@ -16,6 +16,7 @@ public :
 	void ClearScreen(void);
 
 private:
-	HANDLE hConsole;
+	static ConsoleManager sInstance;
+	HANDLE mhConsole;
 };
 

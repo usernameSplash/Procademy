@@ -2,6 +2,8 @@
 #include <cstring>
 #include "Renderer.h"
 
+Renderer Renderer::sInstance;
+
 Renderer::Renderer()
 {
 	BufferClear();
@@ -13,16 +15,15 @@ Renderer::~Renderer()
 
 Renderer* Renderer::GetInstance(void)
 {
-	Renderer instance;
-	return &instance;
+	return &sInstance;
 }
 
 void Renderer::BufferFlip(void)
 {
-	size_t row;
+	int row;
 	for (row = 0; row < dfSCREEN_HEIGHT; row++)
 	{
-		cs_MoveCursor(0, row);
+		ConsoleManager::GetInstance()->MoveCursor(0, row);
 		printf(screenBuffer[row]);
 	}
 }
