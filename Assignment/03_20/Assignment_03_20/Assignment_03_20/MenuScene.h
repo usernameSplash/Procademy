@@ -2,8 +2,8 @@
 
 #include "BaseScene.h"
 
-class MenuScene : public IBaseScene
+class MenuScene : public BaseScene
 {
-	virtual void Update(void) override;
+	virtual bool Update(void) override;
 };
 

@@ -8,7 +8,7 @@ enum class eSceneType
 	OVER
 };
 
-class IBaseScene;
+class BaseScene;
 class SceneManager
 {
 private:
@@ -18,11 +18,12 @@ private:
 public:
 	static SceneManager* GetInstance(void);
 	void SetScene(eSceneType sceneType);
-	void Update(void);
+	bool Update(void);
+	void Render(void);
 
 private:
 	static SceneManager sInstance;
-	IBaseScene* mCurScene;
+	BaseScene* mCurScene;
 	eSceneType mCurSceneType;
 	bool mbSceneChanged;
 };

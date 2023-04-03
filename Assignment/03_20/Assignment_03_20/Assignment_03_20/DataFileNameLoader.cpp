@@ -40,7 +40,7 @@ void DataFileNameLoader::LoadStageDataFilesName(void)
 	FILE* stageFile;
 	int ret;
 	
-	stageFile = fopen(FILE_PATH(STAGE_INFO_FILE_DIR, STAGE_INFO_FILE_NAME), "w");
+	stageFile = fopen(FILE_PATH(STAGE_INFO_FILE_DIR, STAGE_INFO_FILE_NAME), "r");
 	assert(stageFile != NULL);
 
 	ret = fscanf(stageFile, "%zu\n", &mStageCount);

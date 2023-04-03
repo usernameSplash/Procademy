@@ -3,8 +3,8 @@
 #include "ConsoleManager.h"
 #include "BaseScene.h"
 
-class GameScene : public IBaseScene
+class GameScene : public BaseScene
 {
-	virtual void Update(void) override;
+	virtual bool Update(void) override;
 };
 

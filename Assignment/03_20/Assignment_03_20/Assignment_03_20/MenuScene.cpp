@@ -1,6 +1,6 @@
 #include "MenuScene.h"
 
-void MenuScene::Update(void)
+bool MenuScene::Update(void)
 {
-
+	return false;
 }

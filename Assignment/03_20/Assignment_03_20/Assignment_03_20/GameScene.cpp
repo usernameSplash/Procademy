@@ -1,6 +1,6 @@
 #include "GameScene.h"
 
-void GameScene::Update(void)
+bool GameScene::Update(void)
 {
-
+	return false;
 }

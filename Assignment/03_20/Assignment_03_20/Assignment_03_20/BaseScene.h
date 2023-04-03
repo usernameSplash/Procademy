@@ -1,9 +1,16 @@
 #pragma once
 
-class IBaseScene
+#include "List.h"
+#include "BaseObject.h"
+
+class BaseScene
 {
 protected:
-	virtual void Update() = 0;
+	virtual bool Update(void) = 0;
+	virtual void Render(void);
+
+protected:
+	MyDataStructure::List<BaseObject*> mObjectList;
 
 	friend class SceneManager;
 };

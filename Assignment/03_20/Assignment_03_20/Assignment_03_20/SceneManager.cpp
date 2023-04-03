@@ -38,10 +38,13 @@ void SceneManager::SetScene(eSceneType sceneType)
 	mbSceneChanged = true;
 }
 
-void SceneManager::Update(void)
+bool SceneManager::Update(void)
 {
+	bool ret;
+
 	Renderer::GetInstance()->BufferClear();
-	mCurScene->Update();
+	ret = mCurScene->Update();
+	mCurScene->Render();
 	Renderer::GetInstance()->BufferFlip();
 
 	if (mbSceneChanged)
@@ -66,4 +69,6 @@ void SceneManager::Update(void)
 			break;
 		}
 	}
+
+	return ret;
 }

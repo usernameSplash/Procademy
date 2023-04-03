@@ -22,11 +22,13 @@ int main(void)
 	int iX = 0;  
 	int iY = 0;
 
+	bool bQuitted;
+
 	curTime = timeGetTime();
 	while (1)
 	{
-		sceneManager->Update();
-
+		bQuitted = sceneManager->Update();
+		
 		prevTime = curTime;
 		curTime = timeGetTime();
 

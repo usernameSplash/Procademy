@@ -1,6 +1,6 @@
 #include "OverScene.h"
 
-void OverScene::Update(void)
+bool OverScene::Update(void)
 {
-
+	return false;
 }
