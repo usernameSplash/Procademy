@@ -9,7 +9,7 @@ enum class eObjectType
 class BaseObject
 {
 public:
-	BaseObject(eObjectType objectType, int x, int y);
+	BaseObject(eObjectType objectType, int x, int y, char sprite);
 	virtual ~BaseObject();
 
 	virtual bool Update(void) = 0;
@@ -21,4 +21,5 @@ protected:
 	eObjectType mObjectType;
 	int mX;
 	int mY;
+	char mSprite;
 };

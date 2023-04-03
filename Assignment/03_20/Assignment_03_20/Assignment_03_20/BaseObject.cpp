@@ -1,7 +1,10 @@
 #include "BaseObject.h"
 
-BaseObject::BaseObject(eObjectType objectType, int x, int y)
-	: mObjectType(objectType), mX(x), mY(y)
+BaseObject::BaseObject(eObjectType objectType, int x, int y, char sprite)
+	: mObjectType(objectType)
+	, mX(x)
+	, mY(y)
+	, mSprite(sprite)
 {
 }
 

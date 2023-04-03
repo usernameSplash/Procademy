@@ -5,7 +5,6 @@
 
 class GameScene : public IBaseScene
 {
-protected:
 	virtual void Update(void) override;
 };
 

@@ -4,7 +4,6 @@
 
 class TitleScene : public IBaseScene
 {
-public:
 	virtual void Update(void) override;
 };
 
