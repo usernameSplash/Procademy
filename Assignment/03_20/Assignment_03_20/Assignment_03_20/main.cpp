@@ -3,14 +3,14 @@
 #include <cstdio>
 #include <Windows.h>
 
-#include "Timer.h"
+#include "Clock.h"
 #include "SceneManager.h"
 
 
 int main(void)
 {
 	SceneManager* sceneManager = SceneManager::GetInstance();
-	Timer* timer = Timer::GetInstance();
+	Clock* Clock = Clock::GetInstance();
 
 	const DWORD TIME_PER_FRAME = 1000 / 60;
 	DWORD deltaTime;
@@ -21,8 +21,8 @@ int main(void)
 	{
 		bQuitted = sceneManager->Update();
 		
-		timer->Tick();
-		deltaTime = timer->GetDeltaTime();
+		Clock->Tick();
+		deltaTime = Clock->GetDeltaTime();
 
 		if (deltaTime < TIME_PER_FRAME)
 		{

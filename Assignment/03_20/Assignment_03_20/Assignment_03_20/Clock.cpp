@@ -1,34 +1,34 @@
-#include "Timer.h"
+#include "Clock.h"
 
 #include <timeapi.h>
 #pragma comment(lib, "Winmm.lib") // for using timeGetTime function
 
-Timer Timer::sInstance;
+Clock Clock::sInstance;
 
-Timer::Timer()
+Clock::Clock()
 	: mPrevTime(0)
-	, mCurTime(0)
+	, mCurTime(timeGetTime())
 {
 	timeBeginPeriod(1);
 }
 
-Timer::~Timer()
+Clock::~Clock()
 {
 
 }
 
-Timer* Timer::GetInstance(void)
+Clock* Clock::GetInstance(void)
 {
 	return &sInstance;
 }
 
-void Timer::Tick(void)
+void Clock::Tick(void)
 {
 	mPrevTime = mCurTime;
 	mCurTime = timeGetTime();
 }
 
-DWORD Timer::GetDeltaTime(void)
+DWORD Clock::GetDeltaTime(void)
 {
 	DWORD deltaTime;
 
@@ -44,7 +44,7 @@ DWORD Timer::GetDeltaTime(void)
 	return deltaTime;
 }
 
-void Timer::Reset(void)
+void Clock::Reset(void)
 {
 	mPrevTime = 0;
 	mCurTime = 0;
