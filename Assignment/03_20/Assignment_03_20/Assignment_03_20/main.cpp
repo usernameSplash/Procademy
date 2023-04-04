@@ -10,19 +10,20 @@
 int main(void)
 {
 	SceneManager* sceneManager = SceneManager::GetInstance();
-	Clock* Clock = Clock::GetInstance();
+	Clock* clock = Clock::GetInstance();
 
 	const DWORD TIME_PER_FRAME = 1000 / 60;
 	DWORD deltaTime;
-
 	bool bQuitted = false;
+
+	clock->Tick();
 
 	while (bQuitted == false)
 	{
 		bQuitted = sceneManager->Update();
 		
-		Clock->Tick();
-		deltaTime = Clock->GetDeltaTime();
+		clock->Tick();
+		deltaTime = clock->GetDeltaTime();
 
 		if (deltaTime < TIME_PER_FRAME)
 		{

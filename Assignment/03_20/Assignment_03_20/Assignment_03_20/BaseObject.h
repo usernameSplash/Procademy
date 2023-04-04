@@ -1,9 +1,11 @@
+#pragma once
 
 enum class eObjectType
 {
 	Player = 0,
 	Enemy,
-	Bullet
+	Bullet,
+	Invisible
 };
 
 class BaseObject

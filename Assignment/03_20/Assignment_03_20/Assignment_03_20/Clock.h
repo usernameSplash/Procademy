@@ -1,21 +1,21 @@
 #pragma once
 #include <Windows.h>
 
-class Timer
+class Clock
 {
 private:
-	Timer();
-	~Timer();
+	Clock();
+	~Clock();
 
 public:
-	static Timer* GetInstance(void);
+	static Clock* GetInstance(void);
 	void Tick(void);
 	DWORD GetDeltaTime(void);
 	void Reset(void);
 
 
 private:
-	static Timer sInstance;
+	static Clock sInstance;
 	DWORD mPrevTime;
 	DWORD mCurTime;
 };

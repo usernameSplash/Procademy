@@ -2,6 +2,7 @@
 
 #include "BaseScene.h"
 #include "Renderer.h"
+#include "TimerObject.h"
 
 class TitleScene : public BaseScene
 {
@@ -14,7 +15,15 @@ private:
 
 private:
 	char mTitleBackground[dfSCREEN_HEIGHT * dfSCREEN_WIDTH];
+
+	TimerObject mYTimer;
+	TimerObject mIdleTimer;
+
 	int mXPadding;
 	int mYPadding;
+	int mYPaddingAdditional;
+
+	int mYDir;
+
 };
 
