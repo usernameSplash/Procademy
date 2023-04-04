@@ -138,7 +138,6 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="BaseObject.cpp" />
-    <ClCompile Include="BaseScene.cpp" />
     <ClCompile Include="BulletObject.cpp" />
     <ClCompile Include="ConsoleManager.cpp" />
     <ClCompile Include="DataFileNameLoader.cpp" />

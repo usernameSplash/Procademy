@@ -7,7 +7,7 @@ class BaseScene
 {
 protected:
 	virtual bool Update(void) = 0;
-	virtual void Render(void);
+	virtual void Render(void) = 0;
 
 protected:
 	MyDataStructure::List<BaseObject*> mObjectList;

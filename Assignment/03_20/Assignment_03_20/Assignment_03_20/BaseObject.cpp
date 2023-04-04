@@ -12,6 +12,12 @@ BaseObject::~BaseObject()
 {
 }
 
+void BaseObject::SetPos(int x, int y)
+{
+	mX = x;
+	mY = y;
+}
+
 eObjectType BaseObject::GetObjectType(void)
 {
 	return mObjectType;

@@ -54,9 +54,6 @@
     <ClCompile Include="BulletObject.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="BaseScene.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
     <ClCompile Include="Clock.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>

@@ -4,3 +4,8 @@ bool MenuScene::Update(void)
 {
 	return false;
 }
+
+void MenuScene::Render(void)
+{
+
+}

@@ -16,7 +16,7 @@ public:
 
 	virtual bool Update(void) = 0;
 	virtual void Render(void) = 0;
-
+	void SetPos(int x, int y);
 	eObjectType GetObjectType(void);
 
 protected:

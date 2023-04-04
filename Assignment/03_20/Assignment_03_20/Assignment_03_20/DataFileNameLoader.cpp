@@ -64,3 +64,8 @@ void DataFileNameLoader::LoadStageDataFilesName(void)
 
 	fclose(stageFile);
 }
+
+size_t DataFileNameLoader::GetStageCount(void) const
+{
+	return mStageCount;
+}

@@ -14,6 +14,7 @@ private:
 public:
 	static DataFileNameLoader* GetInstance(void);
 	const char* GetStageFileName(size_t stageNum) const;
+	size_t GetStageCount(void) const;
 
 private:
 	void LoadStageDataFilesName(void);
