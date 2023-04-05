@@ -36,6 +36,7 @@ bool MenuScene::Update(void)
 
 	else if (GetAsyncKeyState(VK_RETURN) & 0x8001)
 	{
+		SceneManager::GetInstance()->SetStageNum(mSelectIndex);
 		SceneManager::GetInstance()->SetScene(eSceneType::GAME);
 	}
 

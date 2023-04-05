@@ -6,6 +6,7 @@
 #include "SceneManager.h"
 
 #include "Renderer.h"
+#include "DataFileNameLoader.h"
 
 SceneManager SceneManager::sInstance;
 
@@ -72,4 +73,12 @@ bool SceneManager::Update(void)
 	}
 
 	return ret;
+}
+
+void SceneManager::SetStageNum(int stageNum)
+{
+	if(0 <= stageNum && stageNum < DataFileNameLoader::GetInstance()->GetStageCount())
+	{
+		mStageNum = stageNum;
+	}
 }

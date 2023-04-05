@@ -19,11 +19,13 @@ public:
 	static SceneManager* GetInstance(void);
 	void SetScene(eSceneType sceneType);
 	bool Update(void);
+	void SetStageNum(int stageNum);
 
 private:
 	static SceneManager sInstance;
 	BaseScene* mCurScene;
 	eSceneType mCurSceneType;
 	bool mbSceneChanged;
+	int mStageNum;
 };
 
