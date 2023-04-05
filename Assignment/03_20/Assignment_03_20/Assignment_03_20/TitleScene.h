@@ -19,8 +19,8 @@ private:
 	TimerObject mYTimer;
 	TimerObject mIdleTimer;
 
-	int mXPadding;
-	int mYPadding;
+	const int mXPadding;
+	const int mYPadding;
 	int mYPaddingAdditional;
 
 	int mYDir;

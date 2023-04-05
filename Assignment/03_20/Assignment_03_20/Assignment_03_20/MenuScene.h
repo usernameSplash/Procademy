@@ -12,6 +12,9 @@ private:
 	virtual void Render(void) override;
 
 public:
-	 
+	int mSelectIndex;
+	const size_t mStageCount;
+	const int mXPadding;
+	const int mYPadding;
 };
 

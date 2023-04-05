@@ -232,7 +232,7 @@ namespace MyDataStructure
 	{
 		if (mSize == 0)
 		{
-			return;
+			return T();
 		}
 
 		Node* targetNode = mHead.mNext;
