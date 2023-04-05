@@ -50,6 +50,7 @@ bool SceneManager::Update(void)
 	if (mbSceneChanged)
 	{
 		delete mCurScene;
+		mbSceneChanged = false;
 
 		switch (mCurSceneType)
 		{

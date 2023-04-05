@@ -19,7 +19,6 @@ public:
 	static SceneManager* GetInstance(void);
 	void SetScene(eSceneType sceneType);
 	bool Update(void);
-	void Render(void);
 
 private:
 	static SceneManager sInstance;
