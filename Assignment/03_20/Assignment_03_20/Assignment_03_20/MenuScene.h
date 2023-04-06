@@ -16,5 +16,8 @@ public:
 	const size_t mStageCount;
 	const int mXPadding;
 	const int mYPadding;
+
+	bool mbUpPressed;
+	bool mbDownPressed;
 };
 
