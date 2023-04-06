@@ -6,7 +6,7 @@
 class GameScene : public BaseScene
 {
 public:
-	GameScene(int stageNum);
+	GameScene();
 
 private:
 	virtual bool Update(void) override;
