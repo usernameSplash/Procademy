@@ -11,7 +11,7 @@ GameScene::GameScene()
 	FILE* file;
 	char file_path[1024] = STAGE_INFO_FILE_DIR;
 
-	strcat(file_path, DataFileNameLoader::GetInstance()->GetStageFileName(GameStageManager::GetInstance()->GetStageNum()));
+	strcat(file_path, DataFileNameLoader::GetInstance()->GetStageFileName(GameStageManager::GetInstance()->GetCurStageNum()));
 	file = fopen(file_path, "r");
 }
 

@@ -1,4 +1,5 @@
 #pragma once
+
 class GameStageManager
 {
 private:
@@ -8,10 +9,11 @@ private:
 public:
 	static GameStageManager* GetInstance(void);
 	void SetStageNum(int stageNum);
-	int GetStageNum(void);
+	int GetCurStageNum(void);
 
 private:
 	static GameStageManager sInstance;
-	int mStageNum;
+	int* mStageHighestScore;
+	int mCurStageNum;
 };
 

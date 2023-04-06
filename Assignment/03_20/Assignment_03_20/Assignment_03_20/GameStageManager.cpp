@@ -4,7 +4,8 @@
 GameStageManager GameStageManager::sInstance;
 
 GameStageManager::GameStageManager()
-	: mStageNum(0)
+	: mStageHighestScore(new int[DataFileNameLoader::GetInstance()->GetStageCount()])
+	, mCurStageNum(0)
 {
 
 }
@@ -23,11 +24,11 @@ void GameStageManager::SetStageNum(int stageNum)
 {
 	if (0 <= stageNum && stageNum < DataFileNameLoader::GetInstance()->GetStageCount())
 	{
-		mStageNum = stageNum;
+		mCurStageNum = stageNum;
 	}
 }
 
-int GameStageManager::GetStageNum(void)
+int GameStageManager::GetCurStageNum(void)
 {
-	return mStageNum;
+	return mCurStageNum;
 }
