@@ -12,8 +12,7 @@ SceneManager SceneManager::sInstance;
 
 SceneManager::SceneManager()
 	: mCurScene(new TitleScene())
-	, mCurSceneType(eSceneType::TITLE)
-	, mbSceneChanged(false)
+	, mNextScene(nullptr)
 {
 
 }
@@ -28,15 +27,9 @@ SceneManager* SceneManager::GetInstance(void)
 	return &sInstance;
 }
 
-void SceneManager::SetScene(eSceneType sceneType)
+void SceneManager::SetNextScene(BaseScene* nextScene)
 {
-	if (mCurSceneType == sceneType)
-	{
-		return;
-	}
-
-	mCurSceneType = sceneType;
-	mbSceneChanged = true;
+	mNextScene = nextScene;
 }
 
 bool SceneManager::Update(void)
@@ -48,37 +41,13 @@ bool SceneManager::Update(void)
 	mCurScene->Render();
 	Renderer::GetInstance()->BufferFlip();
 
-	if (mbSceneChanged)
+	if (mNextScene != nullptr)
 	{
 		delete mCurScene;
-		mbSceneChanged = false;
 
-		switch (mCurSceneType)
-		{
-		case eSceneType::TITLE:
-			mCurScene = new TitleScene();
-			break;
-		case eSceneType::MENU:
-			mCurScene = new MenuScene();
-			break;
-		case eSceneType::GAME:
-			mCurScene = new GameScene();
-			break;
-		case eSceneType::OVER:
-			mCurScene = new OverScene();
-			break;
-		default:
-			break;
-		}
+		mCurScene = mNextScene;
+		mNextScene = nullptr;
 	}
 
 	return ret;
-}
-
-void SceneManager::SetStageNum(int stageNum)
-{
-	if(0 <= stageNum && stageNum < DataFileNameLoader::GetInstance()->GetStageCount())
-	{
-		mStageNum = stageNum;
-	}
 }

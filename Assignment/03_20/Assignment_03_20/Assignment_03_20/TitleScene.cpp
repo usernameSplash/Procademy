@@ -1,9 +1,12 @@
+#include "TitleScene.h"
+
+#include "MenuScene.h"
+#include "SceneManager.h"
+
 #include <cstdio>
 #include <cassert>
 #include <cstring>
 #include <conio.h>
-#include "TitleScene.h"
-#include "SceneManager.h"
 
 TitleScene::TitleScene()
 	: mYTimer(500, 0)
@@ -35,7 +38,7 @@ bool TitleScene::Update(void)
 
 	if (_kbhit())
 	{
-		SceneManager::GetInstance()->SetScene(eSceneType::MENU);
+		SceneManager::GetInstance()->SetNextScene(new MenuScene());
 	}
 
 	if (mYTimer.IsExpired())
@@ -86,7 +89,7 @@ void TitleScene::Render(void)
 		ch++;
 	}
 
-	for (int x = 0; x < 13; x++)
+	for (int x = 0; x < strlen(sentence); x++)
 	{
 		renderer->SpriteDraw(x + 30, 22, sentence[x]);
 	}
