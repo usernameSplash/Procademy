@@ -11,7 +11,4 @@ public:
 private:
 	virtual bool Update(void) override;
 	virtual void Render(void) override;
-
-private:
-	int mStageNum;
 };
