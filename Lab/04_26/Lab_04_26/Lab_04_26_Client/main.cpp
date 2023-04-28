@@ -34,10 +34,6 @@ int wmain(void)
 	u_long noBlockSocketOpt = 1;
 	timeval selectModelTimeout;
 
-	DWORD prevTime;
-	DWORD curTime;
-	DWORD deltaTime;
-
 	clientSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	if (clientSocket == INVALID_SOCKET)
 	{
@@ -45,6 +41,7 @@ int wmain(void)
 	}
 
 	serverAddr.sin_family = AF_INET;
+	//serverAddr.sin_addr.s_addr = htonl((192 << 24) + (168 << 16) + (30 << 8) + 13);
 	serverAddr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 	serverAddr.sin_port = htons(SERVER_PORT);
 
@@ -79,7 +76,6 @@ int wmain(void)
 	selectModelTimeout.tv_usec = 0;
 
 	BufferClear();
-	curTime = timeGetTime();
 
 	while (TRUE)
 	{
@@ -115,6 +111,7 @@ int wmain(void)
 					wprintf(L"Error : %d on %d\n", errorCode, __LINE__);
 					goto SOCKET_ERROR_OCCURRED;
 				}
+
 				ProcessPacket(recvBuf);
 			}
 		}

@@ -1,17 +1,16 @@
-#pragma comment(lib, "Ws2_32.lib")
-
-#include <cstdio>
-#include <WinSock2.h>
-#include <WS2tcpip.h>
+#include "Network.h"
 
 int wmain(void)
 {
-	WSADATA wsa;
-	if (WSAStartup(MAKEWORD(2, 2), &wsa) != 0)
+	int retVal;
+
+	retVal = SocketInitialize();
+	if (retVal == FALSE)
 	{
 		return 1;
 	}
 
-	WSACleanup();
+	MessageController();
+
 	return 0;
 }
