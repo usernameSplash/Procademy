@@ -230,6 +230,7 @@ void RecvProc(SOCKET& refClientSocket)
 				Player_t* pPlayer = &(it->second);
 				pPlayer->x = packetMoveStar->xCoord;
 				pPlayer->y = packetMoveStar->yCoord;
+				SendBroadcast(pPlayer->id, (char*)&packetMoveStar);
 			}
 
 			break;
