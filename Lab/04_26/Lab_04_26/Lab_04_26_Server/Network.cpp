@@ -103,7 +103,7 @@ void MessageController(void)
 			FD_SET(it->second.clientSocket, &readSet);
 		}
 
-		selectRet = select(0, &readSet, NULL, NULL, &selectModelTimeout);
+		selectRet = select(0, &readSet, NULL, NULL, NULL);
 
 		if (selectRet == SOCKET_ERROR)
 		{
@@ -155,7 +155,7 @@ void AcceptProc(void)
 		int errorCode = WSAGetLastError();
 		wprintf(L"Error : %d on %d\n", errorCode, __LINE__);
 		wprintf(L"Create Client Socket Failed");
-		goto SELECT_FAILED;
+		goto ACCEPT_FAILED;
 	}
 
 	l.l_onoff = 1;
@@ -185,6 +185,7 @@ void AcceptProc(void)
 	g_PlayerList.insert(std::make_pair(newPlayer.id, newPlayer));
 
 	SendUnicast(newPlayer.id, (char*)&packetAssignID);
+	
 	SendUnicast(newPlayer.id, (char*)&packetCreateStar);
 	SendBroadcast(&newPlayer.id, 1, (char*)&packetCreateStar);
 
@@ -204,7 +205,7 @@ void AcceptProc(void)
 	wprintf(L"Create New Client Success\n");
 
 LINGER_SET_FAILED:
-SELECT_FAILED:
+ACCEPT_FAILED:
 	return;
 }
 
@@ -216,57 +217,61 @@ void RecvProc(SOCKET& refClientSocket)
 	void* packetPtr;
 	const ePacketType* type;
 	
-	retVal = recv(refClientSocket, (char*)recvBuf, 16, 0);
-
-	if (retVal == SOCKET_ERROR)
+	while (TRUE)
 	{
-		int errorCode = WSAGetLastError();
-		if (errorCode == WSAEWOULDBLOCK)
-		{
-			return;
-		}
-		else if (errorCode == WSAECONNRESET)
-		{
-			wprintf(L"Disconnected By Client\n");
-		}
-		else
-		{
-			wprintf(L"Error : %d on %d\n", errorCode, __LINE__);
-		}
-		
-		PlayerID_t deleteId = std::hash<SOCKET>()(refClientSocket);
-		DeleteUser(deleteId);
-		return;
-	}
+		retVal = recv(refClientSocket, (char*)recvBuf, 16, 0);
 
-	packetPtr = recvBuf;
-	type = static_cast<ePacketType*>(packetPtr);
-	
-	switch (*type)
-	{
-	case ePacketType::MOVE_STAR:
+		if (retVal == SOCKET_ERROR)
 		{
-			PacketMoveStar_t* packetMoveStar = static_cast<PacketMoveStar_t*>(packetPtr);
-			packetMoveStar->type = ePacketType::MOVE_STAR;
-
-			auto it = g_PlayerList.find(packetMoveStar->id);
-
-			if (it == g_PlayerList.end())
+			int errorCode = WSAGetLastError();
+			if (errorCode == WSAEWOULDBLOCK)
 			{
-				break;
+				wprintf(L"WOULDBLOCK");
+				return;
+			}
+			else if (errorCode == WSAECONNRESET)
+			{
+				wprintf(L"Disconnected By Client\n");
+			}
+			else
+			{
+				wprintf(L"Error : %d on %d\n", errorCode, __LINE__);
 			}
 
-			Player_t* pPlayer = &(it->second);
-			pPlayer->x = packetMoveStar->xCoord;
-			pPlayer->y = packetMoveStar->yCoord;
-			wprintf(L"[Move Star] ID: %u, x:%d, y:%d\n", pPlayer->id, pPlayer->x, pPlayer->y);
+			PlayerID_t deleteId = std::hash<SOCKET>()(refClientSocket);
+			DeleteUser(deleteId);
+			return;
+		}
 
-			SendBroadcast(&pPlayer->id, 1, (char*)packetMoveStar);
+		packetPtr = recvBuf;
+		type = static_cast<ePacketType*>(packetPtr);
 
+		switch (*type)
+		{
+		case ePacketType::MOVE_STAR:
+			{
+				PacketMoveStar_t* packetMoveStar = static_cast<PacketMoveStar_t*>(packetPtr);
+				packetMoveStar->type = ePacketType::MOVE_STAR;
+
+				auto it = g_PlayerList.find(packetMoveStar->id);
+
+				if (it == g_PlayerList.end())
+				{
+					break;
+				}
+
+				Player_t* pPlayer = &(it->second);
+				pPlayer->x = packetMoveStar->xCoord;
+				pPlayer->y = packetMoveStar->yCoord;
+				wprintf(L"[Move Star] ID: %u, x:%d, y:%d\n", pPlayer->id, pPlayer->x, pPlayer->y);
+
+				SendBroadcast(&pPlayer->id, 1, (char*)packetMoveStar);
+
+				break;
+			}
+		default:
 			break;
 		}
-	default:
-		break;
 	}
 
 	return;
@@ -385,10 +390,7 @@ void Disconnect(PlayerID_t& playerId)
 	packetDeleteStar.type = ePacketType::DELETE_STAR;
 	packetDeleteStar.id = playerId;
 
-	for (auto it = g_PlayerList.begin(); it != g_PlayerList.end(); ++it)
-	{
-		SendBroadcast(NULL, 0, (char*)&packetDeleteStar);
-	}
+	SendBroadcast(NULL, 0, (char*)&packetDeleteStar);
 
 	return;
 }
