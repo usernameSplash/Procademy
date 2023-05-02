@@ -33,6 +33,7 @@ int wmain(void)
 	linger l;
 	u_long noBlockSocketOpt = 1;
 	timeval selectModelTimeout;
+	BOOL noDelayOpt = TRUE;
 
 	clientSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	if (clientSocket == INVALID_SOCKET)
@@ -64,6 +65,14 @@ int wmain(void)
 		goto SOCKET_ERROR_OCCURRED;
 	}
 
+	retVal = setsockopt(clientSocket, IPPROTO_TCP, TCP_NODELAY, (char*)&noDelayOpt, sizeof(noDelayOpt));
+	if (retVal == SOCKET_ERROR)
+	{
+		int errorCode = WSAGetLastError();
+		wprintf(L"Error : %d on %d\n", errorCode, __LINE__);
+		goto SOCKET_ERROR_OCCURRED;
+	}
+
 	retVal = ioctlsocket(clientSocket, FIONBIO, &noBlockSocketOpt);
 	if (retVal == SOCKET_ERROR)
 	{
@@ -79,7 +88,7 @@ int wmain(void)
 
 	while (TRUE)
 	{
-		UINT8 recvBuf[16];
+		UINT8 recvBuf[16 * 32];
 		UINT8 sendBuf[16];
 		fd_set readSet;
 		bool bShouldSend;
@@ -99,7 +108,7 @@ int wmain(void)
 		{
 			while (TRUE)
 			{
-				retVal = recv(clientSocket, (char*)recvBuf, 16, 0);
+				retVal = recv(clientSocket, (char*)recvBuf, 16 * 32, 0);
 				if (retVal == SOCKET_ERROR)
 				{
 					int errorCode = WSAGetLastError();
@@ -112,7 +121,10 @@ int wmain(void)
 					goto SOCKET_ERROR_OCCURRED;
 				}
 
-				ProcessPacket(recvBuf);
+				for (int packetCount = 0; packetCount < (retVal / 16); packetCount++)
+				{
+					ProcessPacket(recvBuf + packetCount * 16);
+				}
 			}
 		}
 		

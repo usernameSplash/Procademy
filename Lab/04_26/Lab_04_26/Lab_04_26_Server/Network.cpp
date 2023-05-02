@@ -23,7 +23,11 @@ int SocketInitialize(void)
 		return FALSE;
 	}
 
-	int retVal;
+	int bindRet;
+	int setSockOptRet;
+	int ioctlSocketRet;
+	int listenRet;
+
 	linger l;
 	u_long noBlockSocketOpt;
 
@@ -39,8 +43,8 @@ int SocketInitialize(void)
 	serverAddr.sin_addr.s_addr = htonl(INADDR_ANY);
 	serverAddr.sin_port = htons(SERVER_PORT);
 
-	retVal = bind(listenSocket, (SOCKADDR*)&serverAddr, sizeof(serverAddr));
-	if (retVal == SOCKET_ERROR)
+	bindRet = bind(listenSocket, (SOCKADDR*)&serverAddr, sizeof(serverAddr));
+	if (bindRet == SOCKET_ERROR)
 	{
 		int errorCode = WSAGetLastError();
 		wprintf(L"Error : %d on %d\n", errorCode, __LINE__);
@@ -49,8 +53,8 @@ int SocketInitialize(void)
 
 	l.l_onoff = 1;
 	l.l_linger = 0;
-	retVal = setsockopt(listenSocket, SOL_SOCKET, SO_LINGER, (char*)&l, sizeof(l));
-	if (retVal == SOCKET_ERROR)
+	setSockOptRet = setsockopt(listenSocket, SOL_SOCKET, SO_LINGER, (char*)&l, sizeof(l));
+	if (setSockOptRet == SOCKET_ERROR)
 	{
 		int errorCode = WSAGetLastError();
 		wprintf(L"Error : %d on %d\n", errorCode, __LINE__);
@@ -58,16 +62,16 @@ int SocketInitialize(void)
 	}
 
 	noBlockSocketOpt = 1;
-	retVal = ioctlsocket(listenSocket, FIONBIO, &noBlockSocketOpt);
-	if (retVal == SOCKET_ERROR)
+	ioctlSocketRet = ioctlsocket(listenSocket, FIONBIO, &noBlockSocketOpt);
+	if (ioctlSocketRet == SOCKET_ERROR)
 	{
 		int errorCode = WSAGetLastError();
 		wprintf(L"Error : %d on %d\n", errorCode, __LINE__);
 		goto SOCKET_ERROR_OCCURRED;
 	}
 
-	retVal = listen(listenSocket, SOMAXCONN_HINT(SOMAXCONN));
-	if (retVal == SOCKET_ERROR)
+	listenRet = listen(listenSocket, SOMAXCONN_HINT(SOMAXCONN));
+	if (listenRet == SOCKET_ERROR)
 	{
 		int errorCode = WSAGetLastError();
 		wprintf(L"Error : %d on %d\n", errorCode, __LINE__);
@@ -89,12 +93,6 @@ void MessageController(void)
 
 	while (TRUE)
 	{
-		UINT8 recvBuf[16];
-		//UINT8 sendBuf[16];
-		timeval selectModelTimeout;
-		selectModelTimeout.tv_sec = 0;
-		selectModelTimeout.tv_usec = 10000;
-
 		FD_ZERO(&readSet);
 		FD_SET(listenSocket, &readSet);
 
@@ -118,6 +116,7 @@ void MessageController(void)
 			AcceptProc();
 		}
 
+		wprintf(L"\nReceive Data From %u Users\n", readSet.fd_count);
 		for (int iCnt = 0; iCnt < readSet.fd_count; iCnt++)
 		{
 			SOCKET s = readSet.fd_array[iCnt];
@@ -126,7 +125,7 @@ void MessageController(void)
 				continue;
 			}
 
-			wprintf(L"New Packet From Client\n");
+			wprintf(L"Receive Data From Client\n");
 			RecvProc(s);
 		}
 
@@ -142,7 +141,7 @@ SELECT_FAILED:
 void AcceptProc(void)
 {
 	int serverAddrLen = sizeof(serverAddr);
-	int retVal;
+	int setSockOptRet;
 	SOCKET clientSocket;
 	linger l;
 
@@ -160,8 +159,8 @@ void AcceptProc(void)
 
 	l.l_onoff = 1;
 	l.l_linger = 0;
-	retVal = setsockopt(listenSocket, SOL_SOCKET, SO_LINGER, (char*)&l, sizeof(l));
-	if (retVal == SOCKET_ERROR)
+	setSockOptRet = setsockopt(listenSocket, SOL_SOCKET, SO_LINGER, (char*)&l, sizeof(l));
+	if (setSockOptRet == SOCKET_ERROR)
 	{
 		int errorCode = WSAGetLastError();
 		wprintf(L"Error : %d on %d\n", errorCode, __LINE__);
@@ -211,22 +210,22 @@ ACCEPT_FAILED:
 
 void RecvProc(SOCKET& refClientSocket)
 {
-	UINT8 recvBuf[16];
-	int retVal;
+	UINT8 recvBuf[16 * 32];
+	int recvRet;
 
 	void* packetPtr;
 	const ePacketType* type;
 	
 	while (TRUE)
 	{
-		retVal = recv(refClientSocket, (char*)recvBuf, 16, 0);
+		recvRet = recv(refClientSocket, (char*)recvBuf, 16 * 32, 0);
 
-		if (retVal == SOCKET_ERROR)
+		if (recvRet == SOCKET_ERROR)
 		{
 			int errorCode = WSAGetLastError();
 			if (errorCode == WSAEWOULDBLOCK)
 			{
-				wprintf(L"WOULDBLOCK");
+				wprintf(L"WOULDBLOCK\n");
 				return;
 			}
 			else if (errorCode == WSAECONNRESET)
@@ -243,34 +242,39 @@ void RecvProc(SOCKET& refClientSocket)
 			return;
 		}
 
-		packetPtr = recvBuf;
-		type = static_cast<ePacketType*>(packetPtr);
-
-		switch (*type)
+		wprintf(L"Received %d Bytes from Client(%u)\n", recvRet, static_cast<PlayerID_t>(std::hash<SOCKET>()(refClientSocket)));
+		for (int packetCount = 0; packetCount < recvRet / 16; packetCount++)
 		{
-		case ePacketType::MOVE_STAR:
+			packetPtr = recvBuf + packetCount * 16;
+
+			type = static_cast<ePacketType*>(packetPtr);
+
+			switch (*type)
 			{
-				PacketMoveStar_t* packetMoveStar = static_cast<PacketMoveStar_t*>(packetPtr);
-				packetMoveStar->type = ePacketType::MOVE_STAR;
-
-				auto it = g_PlayerList.find(packetMoveStar->id);
-
-				if (it == g_PlayerList.end())
+			case ePacketType::MOVE_STAR:
 				{
+					PacketMoveStar_t* packetMoveStar = static_cast<PacketMoveStar_t*>(packetPtr);
+					packetMoveStar->type = ePacketType::MOVE_STAR;
+
+					auto it = g_PlayerList.find(packetMoveStar->id);
+
+					if (it == g_PlayerList.end())
+					{
+						break;
+					}
+
+					Player_t* pPlayer = &(it->second);
+					pPlayer->x = packetMoveStar->xCoord;
+					pPlayer->y = packetMoveStar->yCoord;
+					wprintf(L"[Move Star] ID: %u, x:%d, y:%d\n", pPlayer->id, pPlayer->x, pPlayer->y);
+
+					SendBroadcast(&pPlayer->id, 1, (char*)packetMoveStar);
+
 					break;
 				}
-
-				Player_t* pPlayer = &(it->second);
-				pPlayer->x = packetMoveStar->xCoord;
-				pPlayer->y = packetMoveStar->yCoord;
-				wprintf(L"[Move Star] ID: %u, x:%d, y:%d\n", pPlayer->id, pPlayer->x, pPlayer->y);
-
-				SendBroadcast(&pPlayer->id, 1, (char*)packetMoveStar);
-
+			default:
 				break;
 			}
-		default:
-			break;
 		}
 	}
 
@@ -280,7 +284,7 @@ void RecvProc(SOCKET& refClientSocket)
 void SendUnicast(PlayerID_t& playerId, char* msg)
 {
 	Player player;
-	int retVal;
+	int sendRet;
 	auto it = g_PlayerList.find(playerId);
 
 	if (it == g_PlayerList.end())
@@ -290,29 +294,36 @@ void SendUnicast(PlayerID_t& playerId, char* msg)
 
 	player = it->second;
 
-	retVal = send(player.clientSocket, msg, 16, 0);
-	wprintf(L"[Send Message] Type: % d, Dest ID : % u\n", *reinterpret_cast<ePacketType*>(msg), it->second.id);
+	sendRet = send(player.clientSocket, msg, 16, 0);
 
-	if (retVal == SOCKET_ERROR)
+	if (sendRet == SOCKET_ERROR)
 	{
 		int errorCode = WSAGetLastError();
 		if (errorCode == WSAEWOULDBLOCK)
 		{
 			return;
 		}
+		else if (errorCode == WSAECONNRESET)
+		{
+			wprintf(L"Disconnected By Client(%u) in Broadcasting\n", player.id);
+		}
 		else
 		{
 			wprintf(L"Error : %d on %d\n", errorCode, __LINE__);
-			DeleteUser(playerId);
 		}
+		DeleteUser(playerId);
+
+		return;
 	}
+
+	wprintf(L"[Send Message] Type: % d, Dest ID : %u\n", *reinterpret_cast<ePacketType*>(msg), it->second.id);
 
 	return;
 }
 
 void SendBroadcast(PlayerID_t* excludedPlayerId, size_t playerCount, char* msg)
 {
-	int retVal;
+	int sendRet;
 
 	for (auto it = g_PlayerList.begin(); it != g_PlayerList.end(); ++it)
 	{
@@ -324,21 +335,28 @@ void SendBroadcast(PlayerID_t* excludedPlayerId, size_t playerCount, char* msg)
 			}
 		}
 
-		retVal = send(it->second.clientSocket, msg, 16, 0);
-		wprintf(L"[Broadcast Message] Type: %d, Dest ID: %u\n", *reinterpret_cast<ePacketType*>(msg), it->second.id);
+		sendRet = send(it->second.clientSocket, msg, 16, 0);
 
-		if (retVal == SOCKET_ERROR)
+		if (sendRet == SOCKET_ERROR)
 		{
 			int errorCode = WSAGetLastError();
 			if (errorCode == WSAEWOULDBLOCK)
 			{
 				break;
 			}
+			else if (errorCode == WSAECONNRESET)
+			{
+				wprintf(L"Disconnected By Client(%u) in Broadcasting\n", it->second.id);
+			}
 			else
 			{
 				wprintf(L"Error : %d on %d\n", errorCode, __LINE__);
-				DeleteUser(const_cast<PlayerID_t&>(it->first));
 			}
+			DeleteUser(const_cast<PlayerID_t&>(it->first));
+		}
+		else
+		{
+			wprintf(L"[Broadcast Message] Type: %d, Dest ID: %u\n", *reinterpret_cast<ePacketType*>(msg), it->second.id);
 		}
 
 	NEXT_LOOP:
@@ -362,7 +380,7 @@ void DeleteUser(PlayerID_t& playerId)
 void Disconnect(PlayerID_t& playerId)
 {
 	SOCKET clientSocket;
-	int retVal;
+	int closeSocketRet;
 	auto it = g_ShouldDisconnectPlayerList.find(playerId);
 
 	if (it == g_ShouldDisconnectPlayerList.end())
@@ -371,9 +389,9 @@ void Disconnect(PlayerID_t& playerId)
 	}
 
 	clientSocket = it->second.clientSocket;
-	retVal = closesocket(clientSocket);
+	closeSocketRet = closesocket(clientSocket);
 
-	if (retVal == SOCKET_ERROR)
+	if (closeSocketRet == SOCKET_ERROR)
 	{
 		int errorCode = WSAGetLastError();
 		if (errorCode != WSAEWOULDBLOCK)
