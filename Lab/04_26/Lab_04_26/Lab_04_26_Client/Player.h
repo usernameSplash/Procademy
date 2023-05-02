@@ -1,7 +1,7 @@
 #pragma once
 #include <basetsd.h>
 
-typedef INT32 PlayerID_t;
+typedef UINT32 PlayerID_t;
 
 typedef struct Player
 {
