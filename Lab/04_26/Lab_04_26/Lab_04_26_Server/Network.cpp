@@ -4,6 +4,7 @@
 
 #include <utility>
 
+std::unordered_map<PlayerID_t, Player> g_ShouldDisconnectPlayerList;
 std::unordered_map<PlayerID_t, Player> g_PlayerList;
 
 SOCKET listenSocket;
@@ -22,7 +23,11 @@ int SocketInitialize(void)
 		return FALSE;
 	}
 
-	int retVal;
+	int bindRet;
+	int setSockOptRet;
+	int ioctlSocketRet;
+	int listenRet;
+
 	linger l;
 	u_long noBlockSocketOpt;
 
@@ -38,8 +43,8 @@ int SocketInitialize(void)
 	serverAddr.sin_addr.s_addr = htonl(INADDR_ANY);
 	serverAddr.sin_port = htons(SERVER_PORT);
 
-	retVal = bind(listenSocket, (SOCKADDR*)&serverAddr, sizeof(serverAddr));
-	if (retVal == SOCKET_ERROR)
+	bindRet = bind(listenSocket, (SOCKADDR*)&serverAddr, sizeof(serverAddr));
+	if (bindRet == SOCKET_ERROR)
 	{
 		int errorCode = WSAGetLastError();
 		wprintf(L"Error : %d on %d\n", errorCode, __LINE__);
@@ -48,8 +53,8 @@ int SocketInitialize(void)
 
 	l.l_onoff = 1;
 	l.l_linger = 0;
-	retVal = setsockopt(listenSocket, SOL_SOCKET, SO_LINGER, (char*)&l, sizeof(l));
-	if (retVal == SOCKET_ERROR)
+	setSockOptRet = setsockopt(listenSocket, SOL_SOCKET, SO_LINGER, (char*)&l, sizeof(l));
+	if (setSockOptRet == SOCKET_ERROR)
 	{
 		int errorCode = WSAGetLastError();
 		wprintf(L"Error : %d on %d\n", errorCode, __LINE__);
@@ -57,16 +62,16 @@ int SocketInitialize(void)
 	}
 
 	noBlockSocketOpt = 1;
-	retVal = ioctlsocket(listenSocket, FIONBIO, &noBlockSocketOpt);
-	if (retVal == SOCKET_ERROR)
+	ioctlSocketRet = ioctlsocket(listenSocket, FIONBIO, &noBlockSocketOpt);
+	if (ioctlSocketRet == SOCKET_ERROR)
 	{
 		int errorCode = WSAGetLastError();
 		wprintf(L"Error : %d on %d\n", errorCode, __LINE__);
 		goto SOCKET_ERROR_OCCURRED;
 	}
 
-	retVal = listen(listenSocket, SOMAXCONN_HINT(SOMAXCONN));
-	if (retVal == SOCKET_ERROR)
+	listenRet = listen(listenSocket, SOMAXCONN_HINT(SOMAXCONN));
+	if (listenRet == SOCKET_ERROR)
 	{
 		int errorCode = WSAGetLastError();
 		wprintf(L"Error : %d on %d\n", errorCode, __LINE__);
@@ -88,9 +93,6 @@ void MessageController(void)
 
 	while (TRUE)
 	{
-		UINT8 recvBuf[16];
-		UINT8 sendBuf[16];
-
 		FD_ZERO(&readSet);
 		FD_SET(listenSocket, &readSet);
 
@@ -110,9 +112,11 @@ void MessageController(void)
 
 		if (FD_ISSET(listenSocket, &readSet))
 		{
+			wprintf(L"Accept New Client\n");
 			AcceptProc();
 		}
 
+		wprintf(L"\nReceive Data From %u Users\n", readSet.fd_count);
 		for (int iCnt = 0; iCnt < readSet.fd_count; iCnt++)
 		{
 			SOCKET s = readSet.fd_array[iCnt];
@@ -121,8 +125,11 @@ void MessageController(void)
 				continue;
 			}
 
+			wprintf(L"Receive Data From Client\n");
 			RecvProc(s);
 		}
+
+		DisconnectPlayers();
 	}
 
 SELECT_FAILED:
@@ -134,7 +141,7 @@ SELECT_FAILED:
 void AcceptProc(void)
 {
 	int serverAddrLen = sizeof(serverAddr);
-	int retVal;
+	int setSockOptRet;
 	SOCKET clientSocket;
 	linger l;
 
@@ -147,13 +154,13 @@ void AcceptProc(void)
 		int errorCode = WSAGetLastError();
 		wprintf(L"Error : %d on %d\n", errorCode, __LINE__);
 		wprintf(L"Create Client Socket Failed");
-		goto SELECT_FAILED;
+		goto ACCEPT_FAILED;
 	}
 
 	l.l_onoff = 1;
 	l.l_linger = 0;
-	retVal = setsockopt(listenSocket, SOL_SOCKET, SO_LINGER, (char*)&l, sizeof(l));
-	if (retVal == SOCKET_ERROR)
+	setSockOptRet = setsockopt(listenSocket, SOL_SOCKET, SO_LINGER, (char*)&l, sizeof(l));
+	if (setSockOptRet == SOCKET_ERROR)
 	{
 		int errorCode = WSAGetLastError();
 		wprintf(L"Error : %d on %d\n", errorCode, __LINE__);
@@ -174,79 +181,117 @@ void AcceptProc(void)
 	packetCreateStar.xCoord = newPlayer.x;
 	packetCreateStar.yCoord = newPlayer.y;
 
+	g_PlayerList.insert(std::make_pair(newPlayer.id, newPlayer));
+
 	SendUnicast(newPlayer.id, (char*)&packetAssignID);
+	
 	SendUnicast(newPlayer.id, (char*)&packetCreateStar);
-	SendBroadcast(newPlayer.id, (char*)&packetCreateStar);
+	SendBroadcast(&newPlayer.id, 1, (char*)&packetCreateStar);
 
 	for (auto it = g_PlayerList.begin(); it != g_PlayerList.end(); ++it)
 	{
+		if (it->first == newPlayer.id)
+		{
+			continue;
+		}
+
 		packetCreateStar.id = it->first;
 		packetCreateStar.xCoord = it->second.x;
 		packetCreateStar.yCoord = it->second.y;
 		SendUnicast(newPlayer.id, (char*)&packetCreateStar);
 	}
 
-	g_PlayerList.insert(std::make_pair(newPlayer.id, newPlayer));
+	wprintf(L"Create New Client Success\n");
 
 LINGER_SET_FAILED:
-SELECT_FAILED:
+ACCEPT_FAILED:
 	return;
 }
 
 void RecvProc(SOCKET& refClientSocket)
 {
-	UINT8 recvBuf[16];
-	int retVal;
+	UINT8 recvBuf[16 * 32];
+	int recvRet;
 
 	void* packetPtr;
 	const ePacketType* type;
 	
-	retVal = recv(refClientSocket, (char*)recvBuf, 16, 0);
+	while (TRUE)
+	{
+		recvRet = recv(refClientSocket, (char*)recvBuf, 16 * 32, 0);
 
-	if (retVal == SOCKET_ERROR)
-	{
-		int errorCode = WSAGetLastError();
-		wprintf(L"Error : %d on %d\n", errorCode, __LINE__);
-		goto RECV_FAILED;
-	}
-	else
-	{
-		//Disconnect(...);
-	}
-
-	packetPtr = recvBuf;
-	type = static_cast<ePacketType*>(packetPtr);
-	
-	switch (*type)
-	{
-	case ePacketType::MOVE_STAR:
+		if (recvRet == SOCKET_ERROR)
 		{
-			PacketMoveStar_t* packetMoveStar = static_cast<PacketMoveStar_t*>(packetPtr);
-
-			auto it = g_PlayerList.find(packetMoveStar->id);
-
-			if (it != g_PlayerList.end())
+			int errorCode = WSAGetLastError();
+			if (errorCode == WSAEWOULDBLOCK)
 			{
+<<<<<<< HEAD
 				Player_t* pPlayer = &(it->second);
 				pPlayer->x = packetMoveStar->xCoord;
 				pPlayer->y = packetMoveStar->yCoord;
 				SendBroadcast(pPlayer->id, (char*)&packetMoveStar);
+=======
+				wprintf(L"WOULDBLOCK\n");
+				return;
+			}
+			else if (errorCode == WSAECONNRESET)
+			{
+				wprintf(L"Disconnected By Client\n");
+			}
+			else
+			{
+				wprintf(L"Error : %d on %d\n", errorCode, __LINE__);
+>>>>>>> 23df9171cfa817f45bd0dab14567b19d91b990e1
 			}
 
-			break;
+			PlayerID_t deleteId = std::hash<SOCKET>()(refClientSocket);
+			DeleteUser(deleteId);
+			return;
 		}
-	default:
-		break;
+
+		wprintf(L"Received %d Bytes from Client(%u)\n", recvRet, static_cast<PlayerID_t>(std::hash<SOCKET>()(refClientSocket)));
+		for (int packetCount = 0; packetCount < recvRet / 16; packetCount++)
+		{
+			packetPtr = recvBuf + packetCount * 16;
+
+			type = static_cast<ePacketType*>(packetPtr);
+
+			switch (*type)
+			{
+			case ePacketType::MOVE_STAR:
+				{
+					PacketMoveStar_t* packetMoveStar = static_cast<PacketMoveStar_t*>(packetPtr);
+					packetMoveStar->type = ePacketType::MOVE_STAR;
+
+					auto it = g_PlayerList.find(packetMoveStar->id);
+
+					if (it == g_PlayerList.end())
+					{
+						break;
+					}
+
+					Player_t* pPlayer = &(it->second);
+					pPlayer->x = packetMoveStar->xCoord;
+					pPlayer->y = packetMoveStar->yCoord;
+					wprintf(L"[Move Star] ID: %u, x:%d, y:%d\n", pPlayer->id, pPlayer->x, pPlayer->y);
+
+					SendBroadcast(&pPlayer->id, 1, (char*)packetMoveStar);
+
+					break;
+				}
+			default:
+				break;
+			}
+		}
 	}
 
-RECV_FAILED:
 	return;
 }
 
 void SendUnicast(PlayerID_t& playerId, char* msg)
 {
 	Player player;
-	int retVal;
+	int sendRet;
 	auto it = g_PlayerList.find(playerId);
 
 	if (it == g_PlayerList.end())
@@ -256,42 +301,84 @@ void SendUnicast(PlayerID_t& playerId, char* msg)
 
 	player = it->second;
 
-	retVal = send(player.clientSocket, msg, 16, 0);
+	sendRet = send(player.clientSocket, msg, 16, 0);
 
-	if (retVal == SOCKET_ERROR)
+	if (sendRet == SOCKET_ERROR)
 	{
-		//Disconnect(playerId);
+		int errorCode = WSAGetLastError();
+		if (errorCode == WSAEWOULDBLOCK)
+		{
+			return;
+		}
+		else if (errorCode == WSAECONNRESET)
+		{
+			wprintf(L"Disconnected By Client(%u) in Broadcasting\n", player.id);
+		}
+		else
+		{
+			wprintf(L"Error : %d on %d\n", errorCode, __LINE__);
+		}
+		DeleteUser(playerId);
+
+		return;
+	}
+
+	wprintf(L"[Send Message] Type: % d, Dest ID : %u\n", *reinterpret_cast<ePacketType*>(msg), it->second.id);
+
+	return;
+}
+
+void SendBroadcast(PlayerID_t* excludedPlayerId, size_t playerCount, char* msg)
+{
+	int sendRet;
+
+	for (auto it = g_PlayerList.begin(); it != g_PlayerList.end(); ++it)
+	{
+		for (int iCnt = 0; iCnt < playerCount; ++iCnt)
+		{
+			if (it->first == excludedPlayerId[iCnt])
+			{
+				goto NEXT_LOOP;
+			}
+		}
+
+		sendRet = send(it->second.clientSocket, msg, 16, 0);
+
+		if (sendRet == SOCKET_ERROR)
+		{
+			int errorCode = WSAGetLastError();
+			if (errorCode == WSAEWOULDBLOCK)
+			{
+				break;
+			}
+			else if (errorCode == WSAECONNRESET)
+			{
+				wprintf(L"Disconnected By Client(%u) in Broadcasting\n", it->second.id);
+			}
+			else
+			{
+				wprintf(L"Error : %d on %d\n", errorCode, __LINE__);
+			}
+			DeleteUser(const_cast<PlayerID_t&>(it->first));
+		}
+		else
+		{
+			wprintf(L"[Broadcast Message] Type: %d, Dest ID: %u\n", *reinterpret_cast<ePacketType*>(msg), it->second.id);
+		}
+
+	NEXT_LOOP:
+		continue;
 	}
 
 	return;
 }
 
-void SendBroadcast(PlayerID_t& excludedPlayerId, char* msg)
+void DeleteUser(PlayerID_t& playerId)
 {
-	Player excludedPlayer;
-	int retVal;
-	auto it = g_PlayerList.find(excludedPlayerId);
-
-	if (it == g_PlayerList.end())
+	if (g_PlayerList.find(playerId) != g_PlayerList.end())
 	{
-		return;
-	}
-
-	excludedPlayer = it->second;
-
-	for (auto it = g_PlayerList.begin(); it != g_PlayerList.end(); ++it)
-	{
-		if (it->first == excludedPlayerId)
-		{
-			continue;
-		}
-
-		retVal = send(it->second.clientSocket, msg, 16, 0);
-
-		if (retVal == SOCKET_ERROR)
-		{
-			//Disconnect(playerId);
-		}
+		g_ShouldDisconnectPlayerList.insert(std::make_pair(playerId, g_PlayerList.find(playerId)->second));
+		g_PlayerList.erase(playerId);
 	}
 
 	return;
@@ -300,21 +387,50 @@ void SendBroadcast(PlayerID_t& excludedPlayerId, char* msg)
 void Disconnect(PlayerID_t& playerId)
 {
 	SOCKET clientSocket;
-	int retVal;
-	auto it = g_PlayerList.find(playerId);
+	int closeSocketRet;
+	auto it = g_ShouldDisconnectPlayerList.find(playerId);
 
-	if (it == g_PlayerList.end())
+	if (it == g_ShouldDisconnectPlayerList.end())
 	{
 		return;
 	}
 
 	clientSocket = it->second.clientSocket;
-	retVal = closesocket(clientSocket);
+	closeSocketRet = closesocket(clientSocket);
 
-	if (retVal == SOCKET_ERROR)
+	if (closeSocketRet == SOCKET_ERROR)
 	{
-		//Disconnect(playerId);
+		int errorCode = WSAGetLastError();
+		if (errorCode != WSAEWOULDBLOCK)
+		{
+			wprintf(L"Error : %d on %d\n", errorCode, __LINE__);
+			return;
+		}
 	}
 
+	wprintf(L"Disconnect ID : %u\n", playerId);
+
+	PacketDeleteStar_t packetDeleteStar;
+
+	packetDeleteStar.type = ePacketType::DELETE_STAR;
+	packetDeleteStar.id = playerId;
+
+	SendBroadcast(NULL, 0, (char*)&packetDeleteStar);
+
 	return;
+}
+
+void DisconnectPlayers(void)
+{
+	if (!g_ShouldDisconnectPlayerList.empty())
+	{
+		wprintf(L"Disconnect %zu Players\n", g_ShouldDisconnectPlayerList.size());
+	}
+
+	for (auto it = g_ShouldDisconnectPlayerList.begin(); it != g_ShouldDisconnectPlayerList.end(); ++it)
+	{
+		Disconnect(const_cast<PlayerID_t&>(it->first));
+	}
+
+	g_ShouldDisconnectPlayerList.clear();
 }

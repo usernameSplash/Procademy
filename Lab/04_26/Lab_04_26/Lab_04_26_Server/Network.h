@@ -10,6 +10,7 @@
 #include <unordered_map>
 #include "Player.h"
 
+extern std::unordered_map<PlayerID_t, Player> g_ShouldDisconnectPlayerList;
 extern std::unordered_map<PlayerID_t, Player> g_PlayerList;
 
 extern SOCKET listenSocket;
@@ -22,5 +23,7 @@ void MessageController(void);
 void AcceptProc(void); // New User Connected
 void RecvProc(SOCKET& refClientSocket); // Player;
 void SendUnicast(PlayerID_t& playerId, char* msg); // send msg to player
-void SendBroadcast(PlayerID_t& excludedPlayerId, char* msg); // send msg to all player excluding player
-void Disconnect(PlayerID_t& playerId);
+void SendBroadcast(PlayerID_t* excludedPlayerId, size_t playerCount, char* msg); // send msg to all player excluding player
+void DeleteUser(PlayerID_t& playerId);	// delete user in g_PlayerList
+void Disconnect(PlayerID_t& playerId);	// disconnect network from a user
+void DisconnectPlayers(void);
