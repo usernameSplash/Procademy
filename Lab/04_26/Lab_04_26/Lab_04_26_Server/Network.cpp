@@ -184,7 +184,7 @@ void AcceptProc(void)
 	g_PlayerList.insert(std::make_pair(newPlayer.id, newPlayer));
 
 	SendUnicast(newPlayer.id, (char*)&packetAssignID);
-	
+
 	SendUnicast(newPlayer.id, (char*)&packetCreateStar);
 	SendBroadcast(&newPlayer.id, 1, (char*)&packetCreateStar);
 
@@ -215,7 +215,7 @@ void RecvProc(SOCKET& refClientSocket)
 
 	void* packetPtr;
 	const ePacketType* type;
-	
+
 	while (TRUE)
 	{
 		recvRet = recv(refClientSocket, (char*)recvBuf, 16 * 32, 0);
@@ -225,12 +225,6 @@ void RecvProc(SOCKET& refClientSocket)
 			int errorCode = WSAGetLastError();
 			if (errorCode == WSAEWOULDBLOCK)
 			{
-<<<<<<< HEAD
-				Player_t* pPlayer = &(it->second);
-				pPlayer->x = packetMoveStar->xCoord;
-				pPlayer->y = packetMoveStar->yCoord;
-				SendBroadcast(pPlayer->id, (char*)&packetMoveStar);
-=======
 				wprintf(L"WOULDBLOCK\n");
 				return;
 			}
@@ -241,7 +235,6 @@ void RecvProc(SOCKET& refClientSocket)
 			else
 			{
 				wprintf(L"Error : %d on %d\n", errorCode, __LINE__);
->>>>>>> 23df9171cfa817f45bd0dab14567b19d91b990e1
 			}
 
 			PlayerID_t deleteId = std::hash<SOCKET>()(refClientSocket);
