@@ -140,15 +140,16 @@ SELECT_FAILED:
 
 void AcceptProc(void)
 {
-	int serverAddrLen = sizeof(serverAddr);
-	int setSockOptRet;
 	SOCKET clientSocket;
+	SOCKADDR_IN clientAddr;
+	int clientAddrLen = sizeof(clientAddr);
+	int setSockOptRet;
 	linger l;
 
 	PacketAssignID_t packetAssignID;
 	PacketCreateStar_t packetCreateStar;
 
-	clientSocket = accept(listenSocket, (SOCKADDR*)&serverAddr, &serverAddrLen);
+	clientSocket = accept(listenSocket, (SOCKADDR*)&clientAddr, &clientAddrLen);
 	if (clientSocket == INVALID_SOCKET)
 	{
 		int errorCode = WSAGetLastError();
