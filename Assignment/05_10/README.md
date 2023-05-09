@@ -1,4 +1,4 @@
-# Online Painting Client with WSAAsyncSelect
+# NetDrawing Client
 
 WSAAsyncSelect 모델을 사용하여, 제공된 서버에 접속해 다같이 그림을 그릴 수 있는 클라이언트 프로그램을 제작한다.
 
