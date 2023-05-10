@@ -190,6 +190,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
     }
 
     g_ServerAddr.sin_family = AF_INET;
+    //g_ServerAddr.sin_addr.s_addr = htonl((192 << 24) + (168 << 16) + (30 << 8) + 13);
     g_ServerAddr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
     g_ServerAddr.sin_port = htons(SERVER_PORT);
 
@@ -373,6 +374,7 @@ void PacketProc(HWND hWnd, WPARAM wParam, LPARAM lParam)
 
             PacketHeader_t header;
             DrawPacket_t packet;
+            size_t recvRet;
             size_t peekRet;
 
             fwprintf(logFile, L"Received\n");
@@ -388,7 +390,13 @@ void PacketProc(HWND hWnd, WPARAM wParam, LPARAM lParam)
                 }
             }
 
-            g_RecvBuffer.Enqueue(buf, recvRet);
+            recvRet = g_RecvBuffer.Enqueue(buf, recvRet);
+            if (recvRet == 0)
+            {
+                fwprintf(logFile, L"Error : RecvRingbuffer Overflow on %d line", __LINE__);
+                DestroyWindow(hWnd);
+                break;
+            }
 
             if (g_RecvBuffer.Size() < sizeof(header))
             {
