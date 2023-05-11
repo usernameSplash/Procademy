@@ -28,6 +28,7 @@ int main(void)
 			break;
 		}
 
+		ReadRecvBufferProc();
 		LogicProc();
 
 		result = SendMessageController();
