@@ -39,7 +39,7 @@ enum class eMoveDir
 struct Player
 {
 	SOCKET clientSocket;
-	INT32 id;
+	PlayerID id;
 	RingBuffer recvBuffer;
 	RingBuffer sendBuffer;
 	BOOL bMoving;
