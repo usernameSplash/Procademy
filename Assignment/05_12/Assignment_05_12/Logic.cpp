@@ -105,27 +105,7 @@ void PacketMoveStartProc(Player* pPlayer, char* pPacket)
 	}
 
 	pPlayer->status = ePlayerStatus::MOVE;
-
-	switch ((eMoveDir)pPCSMS->dir)
-	{
-	case eMoveDir::RU:
-	case eMoveDir::RR:
-	case eMoveDir::RD:
-		{
-			pPlayer->dir = (BYTE)eMoveDir::RR;
-			break;
-		}
-	case eMoveDir::LU:
-	case eMoveDir::LL:
-	case eMoveDir::LD:
-		{
-			pPlayer->dir = (BYTE)eMoveDir::LL;
-			break;
-		}
-	default:
-		break;
-	}
-
+	pPlayer->dir = pPCSMS->dir;
 	pPlayer->x = pPCSMS->x;
 	pPlayer->y = pPCSMS->y;
 
@@ -151,27 +131,7 @@ void PacketMoveStopProc(Player* pPlayer, char* pPacket)
 	}
 
 	pPlayer->status = ePlayerStatus::IDLE;
-
-	switch ((eMoveDir)pPCSMS->dir)
-	{
-	case eMoveDir::RU:
-	case eMoveDir::RR:
-	case eMoveDir::RD:
-		{
-			pPlayer->dir = (BYTE)eMoveDir::RR;
-			break;
-		}
-	case eMoveDir::LU:
-	case eMoveDir::LL:
-	case eMoveDir::LD:
-		{
-			pPlayer->dir = (BYTE)eMoveDir::LL;
-			break;
-		}
-	default:
-		break;
-	}
-
+	pPlayer->dir = pPCSMS->dir;
 	pPlayer->x = pPCSMS->x;
 	pPlayer->y = pPCSMS->y;
 
@@ -201,27 +161,7 @@ void PacketAttack1Proc(Player* pPlayer, char* pPacket)
 		}
 
 		pPlayer->status = ePlayerStatus::ATTACK;
-
-		switch ((eMoveDir)pPCSAtk->dir)
-		{
-		case eMoveDir::RU:
-		case eMoveDir::RR:
-		case eMoveDir::RD:
-			{
-				pPlayer->dir = (BYTE)eMoveDir::RR;
-				break;
-			}
-		case eMoveDir::LU:
-		case eMoveDir::LL:
-		case eMoveDir::LD:
-			{
-				pPlayer->dir = (BYTE)eMoveDir::LL;
-				break;
-			}
-		default:
-			break;
-		}
-
+		pPlayer->dir = pPCSAtk->dir;
 		pPlayer->x = pPCSAtk->x;
 		pPlayer->y = pPCSAtk->y;
 
@@ -271,27 +211,7 @@ void PacketAttack2Proc(Player* pPlayer, char* pPacket)
 	}
 
 	pPlayer->status = ePlayerStatus::ATTACK;
-
-	switch ((eMoveDir)pPCSAtk->dir)
-	{
-	case eMoveDir::RU:
-	case eMoveDir::RR:
-	case eMoveDir::RD:
-		{
-			pPlayer->dir = (BYTE)eMoveDir::RR;
-			break;
-		}
-	case eMoveDir::LU:
-	case eMoveDir::LL:
-	case eMoveDir::LD:
-		{
-			pPlayer->dir = (BYTE)eMoveDir::LL;
-			break;
-		}
-	default:
-		break;
-	}
-
+	pPlayer->dir = pPCSAtk->dir;
 	pPlayer->x = pPCSAtk->x;
 	pPlayer->y = pPCSAtk->y;
 
@@ -347,27 +267,7 @@ void PacketAttack3Proc(Player* pPlayer, char* pPacket)
 	}
 
 	pPlayer->status = ePlayerStatus::ATTACK;
-
-	switch ((eMoveDir)pPCSAtk->dir)
-	{
-	case eMoveDir::RU:
-	case eMoveDir::RR:
-	case eMoveDir::RD:
-		{
-			pPlayer->dir = (BYTE)eMoveDir::RR;
-			break;
-		}
-	case eMoveDir::LU:
-	case eMoveDir::LL:
-	case eMoveDir::LD:
-		{
-			pPlayer->dir = (BYTE)eMoveDir::LL;
-			break;
-		}
-	default:
-		break;
-	}
-
+	pPlayer->dir = pPCSAtk->dir;
 	pPlayer->x = pPCSAtk->x;
 	pPlayer->y = pPCSAtk->y;
 
