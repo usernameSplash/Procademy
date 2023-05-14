@@ -6,7 +6,7 @@
 
 bool g_bShutdown = false;
 std::unordered_map<PlayerID, Player> g_PlayerList;
-static size_t s_CurDead = 0;
+static size_t s_CurInvalid = 0;
 
 SOCKET listenSocket;
 SOCKADDR_IN serverAddr;
@@ -222,7 +222,7 @@ void AcceptProc(void)
 	newPlayer.x = (rand() % (RANGE_MOVE_RIGHT - RANGE_MOVE_LEFT)) + RANGE_MOVE_LEFT;
 	newPlayer.y = (rand() % (RANGE_MOVE_BOTTOM - RANGE_MOVE_TOP)) + RANGE_MOVE_TOP;
 	newPlayer.dir = (BYTE)(rand() % 2 * 4); // value is 0(LL) or 4(RR);
-	newPlayer.hp = 100;
+	newPlayer.hp = 1;
 	s_CurId++;
 
 	CreatePacketCreateMyCharacter(&pCMCHeader, &pCMC, newPlayer.id, newPlayer.dir, newPlayer.x, newPlayer.y, newPlayer.hp);
@@ -279,7 +279,7 @@ void RecvProc(const PlayerID playerId)
 
 	recvPlayer = &it->second;
 
-	if (recvPlayer->status == ePlayerStatus::DEAD)
+	if (recvPlayer->status == ePlayerStatus::INVALID)
 	{
 		return;
 	}
@@ -346,7 +346,7 @@ void SendProc(const PlayerID playerId)
 
 	sendPlayer = &it->second;
 	
-	if (sendPlayer->status == ePlayerStatus::DEAD)
+	if (sendPlayer->status == ePlayerStatus::INVALID)
 	{
 		return;
 	}
@@ -399,7 +399,7 @@ void SendUnicast(const PlayerID playerId, const size_t size, char* msg)
 
 	player = &it->second;
 
-	if (player->status == ePlayerStatus::DEAD)
+	if (player->status == ePlayerStatus::INVALID)
 	{
 		return;
 	}
@@ -428,7 +428,7 @@ void SendBroadcast(PlayerID* excludedPlayerId, const size_t playerCount, const s
 			}
 		}
 
-		if (it->second.status == ePlayerStatus::DEAD)
+		if (it->second.status == ePlayerStatus::INVALID)
 		{
 			goto NEXT_LOOP;
 		}
@@ -453,49 +453,47 @@ void DeleteUser(const PlayerID playerId)
 
 	if (result != g_PlayerList.end())
 	{
-		result->second.status = ePlayerStatus::DEAD;
-		s_CurDead++;
+		if (result->second.status != ePlayerStatus::INVALID)
+		{
+			result->second.status = ePlayerStatus::INVALID;
+			s_CurInvalid++;
+		}
 	}
 
 	return;
 }
-
 void DisconnectPlayers(void)
 {
 	PacketHeader pDCHeader;
 	PacketSCDeleteCharacter pDC;
 
-	if (s_CurDead == 0)
+	if (s_CurInvalid == 0)
 	{
 		return;
 	}
 
-	wprintf(L"Disconnect %zu Players\n", s_CurDead);
-
-	pDCHeader.code = 0x89;
-	pDCHeader.size = sizeof(pDC);
-	pDCHeader.type = (BYTE)ePacketType::PACKET_SC_DELETE_CHARACTER;
+	wprintf(L"# Disconnect %zu Players\n", s_CurInvalid);
+	s_CurInvalid = 0;
 
 	for (auto it = g_PlayerList.begin(); it != g_PlayerList.end(); ++it)
 	{
-		if (it->second.status != ePlayerStatus::DEAD)
+		if (it->second.status != ePlayerStatus::INVALID)
 		{
 			continue;
 		}
 
 		closesocket(it->second.clientSocket);
-		pDC.id = it->first;
 
+		CreatePacketDeleteCharacter(&pDCHeader, &pDC, it->first);
 		SendBroadcast(NULL, 0, sizeof(pDCHeader), (char*)&pDCHeader);
 		SendBroadcast(NULL, 0, sizeof(pDC), (char*)&pDC);
 
-		wprintf(L"Disconnect : Client(%d)\n", it->first);
+		wprintf(L"# Disconnect Client(%d)\n", it->first);
 
 		it = g_PlayerList.erase(it);
 	}
 
-	wprintf(L"Disconnect Success\n");
-	s_CurDead = 0;
+	wprintf(L"# Disconnect Success\n");
 }
 
 void Terminate(void)

@@ -172,14 +172,36 @@ void PacketAttack1Proc(Player* pPlayer, char* pPacket)
 
 		for (auto it = g_PlayerList.begin(); it != g_PlayerList.end(); ++it)
 		{
-			if (it->second.status == ePlayerStatus::DEAD)
+			if (pPlayer->id == it->first)
 			{
 				continue;
 			}
 
-			if (abs(pPlayer->x - it->second.x) > RANGE_ATTACK_2_X || abs(pPlayer->y - it->second.y) > RANGE_ATTACK_2_Y)
+			if (it->second.status == ePlayerStatus::INVALID)
 			{
 				continue;
+			}
+
+			switch ((eMoveDir)pPlayer->dir)
+			{
+			case eMoveDir::LL:
+				{
+					if ((pPlayer->x < it->second.x) || (pPlayer->x - it->second.x) > RANGE_ATTACK_1_X || abs(pPlayer->y - it->second.y) > RANGE_ATTACK_1_Y)
+					{
+						continue;
+					}
+					break;
+				}
+			case eMoveDir::RR:
+				{
+					if ((pPlayer->x > it->second.x) || (it->second.x - pPlayer->x) > RANGE_ATTACK_1_X || abs(pPlayer->y - it->second.y) > RANGE_ATTACK_1_Y)
+					{
+						continue;
+					}
+					break;
+				}
+			default:
+				break;
 			}
 
 			it->second.hp -= 1;
@@ -222,14 +244,36 @@ void PacketAttack2Proc(Player* pPlayer, char* pPacket)
 
 	for (auto it = g_PlayerList.begin(); it != g_PlayerList.end(); ++it)
 	{
-		if (it->second.status == ePlayerStatus::DEAD)
+		if (pPlayer->id == it->first)
 		{
 			continue;
 		}
 
-		if (abs(pPlayer->x - it->second.x) > RANGE_ATTACK_2_X || abs(pPlayer->y - it->second.y) > RANGE_ATTACK_2_Y)
+		if (it->second.status == ePlayerStatus::INVALID)
 		{
 			continue;
+		}
+
+		switch ((eMoveDir)pPlayer->dir)
+		{
+		case eMoveDir::LL:
+			{
+				if ((pPlayer->x < it->second.x) || (pPlayer->x - it->second.x) > RANGE_ATTACK_2_X || abs(pPlayer->y - it->second.y) > RANGE_ATTACK_2_Y)
+				{
+					continue;
+				}
+				break;
+			}
+		case eMoveDir::RR:
+			{
+				if ((pPlayer->x > it->second.x) || (it->second.x - pPlayer->x) > RANGE_ATTACK_2_X || abs(pPlayer->y - it->second.y) > RANGE_ATTACK_2_Y)
+				{
+					continue;
+				}
+				break;
+			}
+		default:
+			break;
 		}
 
 		if (it->second.hp < 2)
@@ -278,14 +322,36 @@ void PacketAttack3Proc(Player* pPlayer, char* pPacket)
 
 	for (auto it = g_PlayerList.begin(); it != g_PlayerList.end(); ++it)
 	{
-		if (it->second.status == ePlayerStatus::DEAD)
+		if (pPlayer->id == it->first)
 		{
 			continue;
 		}
 
-		if (abs(pPlayer->x - it->second.x) > RANGE_ATTACK_3_X || abs(pPlayer->y - it->second.y) > RANGE_ATTACK_3_Y)
+		if (it->second.status == ePlayerStatus::INVALID)
 		{
 			continue;
+		}
+
+		switch ((eMoveDir)pPlayer->dir)
+		{
+		case eMoveDir::LL:
+			{
+				if ((pPlayer->x < it->second.x) || (pPlayer->x - it->second.x) > RANGE_ATTACK_3_X || abs(pPlayer->y - it->second.y) > RANGE_ATTACK_3_Y)
+				{
+					continue;
+				}
+				break;
+			}
+		case eMoveDir::RR:
+			{
+				if ((pPlayer->x > it->second.x) || (it->second.x - pPlayer->x) > RANGE_ATTACK_3_X || abs(pPlayer->y - it->second.y) > RANGE_ATTACK_3_Y)
+				{
+					continue;
+				}
+				break;
+			}
+		default:
+			break;
 		}
 
 		if (it->second.hp < 3)
@@ -317,14 +383,14 @@ void LogicProc(void)
 	{
 		Player& player = it->second;
 
-		if (player.status == ePlayerStatus::DEAD)
+		if (player.status == ePlayerStatus::INVALID)
 		{
 			continue;
 		}
 
 		if (player.hp == 0)
 		{
-			DeleteUser(it->first);
+			DeleteUser(player.id);
 			continue;
 		}
 

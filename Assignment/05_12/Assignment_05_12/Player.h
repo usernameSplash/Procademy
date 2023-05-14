@@ -41,7 +41,8 @@ enum class ePlayerStatus
 	IDLE = 0,
 	MOVE,
 	ATTACK,
-	DEAD
+	DEAD,
+	INVALID
 };
 
 struct Player
