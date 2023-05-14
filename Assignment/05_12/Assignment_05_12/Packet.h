@@ -5,7 +5,7 @@
 //								edit   : ±è°æ¹Î kkfenix3085@gmail.com
 //
 /////////////////////////////////////////////////////////////////////
-#include <Windows.h>
+#include <basetsd.h>
 #include "Player.h"
 
 enum class ePacketType
@@ -157,5 +157,16 @@ struct PacketSCSync
 	SHORT x;
 	SHORT y;
 };
+
+void CreatePacketCreateMyCharacter(PacketHeader* pHeader, PacketSCCreateMyCharacter* pPacket, PlayerID id, BYTE dir, SHORT x, SHORT y, BYTE hp);
+void CreatePacketCreateOtherCharacter(PacketHeader* pHeader, PacketSCCreateOtherCharacter* pPacket, PlayerID id, BYTE dir, SHORT x, SHORT y, BYTE hp);
+void CreatePacketDeleteCharacter(PacketHeader* pHeader, PacketSCDeleteCharacter* pPacket, PlayerID id);
+void CreatePacketMoveStart(PacketHeader* pHeader, PacketSCMoveStart* pPacket, PlayerID id, BYTE dir, SHORT x, SHORT y);
+void CreatePacketMoveStop(PacketHeader* pHeader, PacketSCMoveStop* pPacket, PlayerID id, BYTE dir, SHORT x, SHORT y);
+void CreatePacketAttack1(PacketHeader* pHeader, PacketSCAttack1* pPacket, PlayerID id, BYTE dir, SHORT x, SHORT y);
+void CreatePacketAttack2(PacketHeader* pHeader, PacketSCAttack2* pPacket, PlayerID id, BYTE dir, SHORT x, SHORT y);
+void CreatePacketAttack3(PacketHeader* pHeader, PacketSCAttack3* pPacket, PlayerID id, BYTE dir, SHORT x, SHORT y);
+void CreatePacketDamage(PacketHeader* pHeader, PacketSCDamage* pPacket, PlayerID attackId, PlayerID damagedId, BYTE hp);
+void CreatePacketSync(PacketHeader* pHeader, PacketSCSync* pPacket, PlayerID id, SHORT x, SHORT y);
 
 #pragma pack(pop)

@@ -8,7 +8,7 @@
 
 chrono::high_resolution_clock::duration g_DeltaTime;
 
-void ReadRecvBufferProc(void)
+void PacketProc(void)
 {
 	PacketHeader header;
 
@@ -20,9 +20,9 @@ void ReadRecvBufferProc(void)
 			continue;
 		}
 
-		while (TRUE)
+		while (true)
 		{
-			//size_t peekSize; //useless
+			char buf[512];
 
 			if (player.recvBuffer.Size() < sizeof(header))
 			{
@@ -30,6 +30,13 @@ void ReadRecvBufferProc(void)
 			}
 
 			player.recvBuffer.Peek((char*)&header, sizeof(header));
+
+			if (header.code != 0x89)
+			{
+				wprintf(L"Client(%d) Sent Wrong Packet Header Code\n", it->first);
+				DeleteUser(it->first);
+				break;
+			}
 			
 			if (player.recvBuffer.Size() < (sizeof(header) + header.size))
 			{
@@ -37,288 +44,40 @@ void ReadRecvBufferProc(void)
 			}
 
 			player.recvBuffer.Dequeue(sizeof(header));
+			player.recvBuffer.Peek(buf, header.size); // Assure <peeksize> is equal to <header.size>
+			player.recvBuffer.Dequeue(header.size);
 
+			// TODO : make functions process each packet
 			switch ((ePacketType)header.type)
 			{
 			case ePacketType::PACKET_CS_MOVE_START:
 				{
-					PacketHeader pSCMSHeader;
-					PacketCSMoveStart pCSMS;
-					PacketSCMoveStart pSCMS;
-					
-					player.recvBuffer.Peek((char*)&pCSMS, sizeof(pCSMS)); // Assure <peeksize> is equal to <header.size>
-					player.recvBuffer.Dequeue(sizeof(pCSMS));
-
-					if (abs(player.x - pCSMS.x) > RANGE_MOVE_ERROR || abs(player.y - pCSMS.y) > RANGE_MOVE_ERROR)
-					{
-						break;
-					}
-
-					player.bMoving = TRUE;
-					player.dir = pCSMS.dir;
-					player.x = pCSMS.x;
-					player.y = pCSMS.y;
-
-					pSCMSHeader.code = 0x89;
-					pSCMSHeader.size = sizeof(pSCMS);
-					pSCMSHeader.type = (BYTE)ePacketType::PACKET_SC_MOVE_START;
-
-					pSCMS.id = it->first;
-					pSCMS.dir = pCSMS.dir;
-					pSCMS.x = pCSMS.x;
-					pSCMS.y = pCSMS.y;
-
-					SendBroadcast(&player.id, 1, sizeof(pSCMSHeader), (char*)&pSCMSHeader);
-					SendBroadcast(&player.id, 1, sizeof(pSCMS), (char*)&pSCMS);
-
+					PacketMoveStartProc(&player, buf);
+					wprintf(L"# <Packet Received> - [MOVE_START] : Client(%d) / Dir : %d / X : %d / Y : %d\n", player.id, player.dir, player.x, player.y);
 					break;
 				}
 			case ePacketType::PACKET_CS_MOVE_STOP:
 				{
-					PacketHeader pSCMSHeader;
-					PacketCSMoveStop pCSMS;
-					PacketSCMoveStop pSCMS;
-
-					player.recvBuffer.Peek((char*)&pCSMS, sizeof(pCSMS));
-					player.recvBuffer.Dequeue(sizeof(pCSMS));
-
-					if (abs(player.x - pCSMS.x) > RANGE_MOVE_ERROR || abs(player.y - pCSMS.y) > RANGE_MOVE_ERROR)
-					{
-						break;
-					}
-
-					player.bMoving = FALSE;
-					player.dir = pCSMS.dir;
-					player.x = pCSMS.x;
-					player.y = pCSMS.y;
-
-					pSCMSHeader.code = 0x89;
-					pSCMSHeader.size = sizeof(pSCMS);
-					pSCMSHeader.type = (BYTE)ePacketType::PACKET_SC_MOVE_STOP;
-
-					pSCMS.id = it->first;
-					pSCMS.dir = pCSMS.dir;
-					pSCMS.x = pCSMS.x;
-					pSCMS.y = pCSMS.y;
-
-					SendBroadcast(&player.id, 1, sizeof(pSCMSHeader), (char*)&pSCMSHeader);
-					SendBroadcast(&player.id, 1, sizeof(pSCMS), (char*)&pSCMS);
-
+					PacketMoveStopProc(&player, buf);
+					wprintf(L"# <Packet Received> - [MOVE_STOP] : Client(%d) / Dir : %d / X : %d / Y : %d\n", player.id, player.dir, player.x, player.y);
 					break;
 				}
 			case ePacketType::PACKET_CS_ATTACK_1:
 				{
-					PacketHeader pSCATK1Header;
-					PacketHeader pDMGHeader;
-					PacketCSAttack1 pCSATK1;
-					PacketSCAttack1 pSCATK1;
-					PacketSCDamage pDMG;
-
-					player.recvBuffer.Peek((char*)&pCSATK1, sizeof(pCSATK1));
-					player.recvBuffer.Dequeue(sizeof(pCSATK1));
-
-					if (abs(player.x - pCSATK1.x) > RANGE_MOVE_ERROR || abs(player.y - pCSATK1.y) > RANGE_MOVE_ERROR)
-					{
-						break;
-					}
-
-					player.dir = pCSATK1.dir;
-					player.x = pCSATK1.x;
-					player.y = pCSATK1.y;
-
-					pSCATK1Header.code = 0x89;
-					pSCATK1Header.size = sizeof(pSCATK1);
-					pSCATK1Header.type = (BYTE)ePacketType::PACKET_SC_ATTACK_1;
-
-					pDMGHeader.code = 0x89;
-					pDMGHeader.size = sizeof(pDMG);
-					pDMGHeader.type = (BYTE)ePacketType::PACKET_SC_DAMAGE;
-
-					for (auto opponentIt = g_PlayerList.begin(); opponentIt != g_PlayerList.end(); ++opponentIt)
-					{
-						Player& opponentPlayer = opponentIt->second;
-
-						if (opponentIt->first == it->first)
-						{
-							continue;
-						}
-
-						if (abs(player.x - opponentPlayer.x) > RANGE_ATTACK_1_X || abs(player.y - opponentPlayer.y) > RANGE_ATTACK_1_Y)
-						{
-							continue;
-						}
-
-						opponentPlayer.hp -= 1;
-
-						pSCATK1.id = it->first;
-						pSCATK1.dir = player.dir;
-						pSCATK1.x = player.x;
-						pSCATK1.y = player.y;
-
-						pDMG.attackId = it->first;
-						pDMG.damagedId = opponentIt->first;
-						pDMG.damagedHp = opponentPlayer.hp;
-
-						SendBroadcast(&player.id, 1, sizeof(pSCATK1Header), (char*)&pSCATK1Header);
-						SendBroadcast(&player.id, 1, sizeof(pSCATK1), (char*)&pSCATK1);
-
-						SendBroadcast(NULL, 0, sizeof(pDMGHeader), (char*)&pDMGHeader);
-						SendBroadcast(NULL, 0, sizeof(pDMG), (char*)&pDMG);
-
-						if (opponentPlayer.hp == 0)
-						{
-							DeleteUser(opponentIt->first);
-						}
-					}
-
+					PacketAttack1Proc(&player, buf);
+					wprintf(L"# <Packet Received> - [ATTACK_1] : Client(%d) / Dir : %d / X : %d / Y : %d\n", player.id, player.dir, player.x, player.y);
 					break;
 				}
 			case ePacketType::PACKET_CS_ATTACK_2:
 				{
-					PacketHeader pSCATK2Header;
-					PacketHeader pDMGHeader;
-					PacketCSAttack1 pCSATK2;
-					PacketSCAttack1 pSCATK2;
-					PacketSCDamage pDMG;
-
-					player.recvBuffer.Peek((char*)&pCSATK2, sizeof(pCSATK2));
-					player.recvBuffer.Dequeue(sizeof(pCSATK2));
-
-					if (abs(player.x - pCSATK2.x) > RANGE_MOVE_ERROR || abs(player.y - pCSATK2.y) > RANGE_MOVE_ERROR)
-					{
-						break;
-					}
-
-					player.dir = pCSATK2.dir;
-					player.x = pCSATK2.x;
-					player.y = pCSATK2.y;
-
-					pSCATK2Header.code = 0x89;
-					pSCATK2Header.size = sizeof(pSCATK2);
-					pSCATK2Header.type = (BYTE)ePacketType::PACKET_SC_ATTACK_2;
-
-					pDMGHeader.code = 0x89;
-					pDMGHeader.size = sizeof(pDMG);
-					pDMGHeader.type = (BYTE)ePacketType::PACKET_SC_DAMAGE;
-
-					for (auto opponentIt = g_PlayerList.begin(); opponentIt != g_PlayerList.end(); ++opponentIt)
-					{
-						Player& opponentPlayer = opponentIt->second;
-
-						if (opponentIt->first == it->first)
-						{
-							continue;
-						}
-
-						if (abs(player.x - opponentPlayer.x) > RANGE_ATTACK_2_X || abs(player.y - opponentPlayer.y) > RANGE_ATTACK_2_Y)
-						{
-							continue;
-						}
-
-						if (opponentPlayer.hp < 2)
-						{
-							opponentPlayer.hp = 0;
-						}
-						else
-						{
-							opponentPlayer.hp -= 2;
-						}
-
-						pSCATK2.id = it->first;
-						pSCATK2.dir = player.dir;
-						pSCATK2.x = player.x;
-						pSCATK2.y = player.y;
-
-						pDMG.attackId = it->first;
-						pDMG.damagedId = opponentIt->first;
-						pDMG.damagedHp = opponentPlayer.hp;
-
-						SendBroadcast(&player.id, 1, sizeof(pSCATK2Header), (char*)&pSCATK2Header);
-						SendBroadcast(&player.id, 1, sizeof(pSCATK2), (char*)&pSCATK2);
-
-						SendBroadcast(NULL, 0, sizeof(pDMGHeader), (char*)&pDMGHeader);
-						SendBroadcast(NULL, 0, sizeof(pDMG), (char*)&pDMG);
-
-						if (opponentPlayer.hp == 0)
-						{
-							DeleteUser(opponentIt->first);
-						}
-					}
-
+					PacketAttack2Proc(&player, buf);
+					wprintf(L"# <Packet Received> - [ATTACK_2] : Client(%d) / Dir : %d / X : %d / Y : %d\n", player.id, player.dir, player.x, player.y);
 					break;
 				}
 			case ePacketType::PACKET_CS_ATTACK_3:
 				{
-					PacketHeader pSCATK3Header;
-					PacketHeader pDMGHeader;
-					PacketCSAttack1 pCSATK3;
-					PacketSCAttack1 pSCATK3;
-					PacketSCDamage pDMG;
-
-					player.recvBuffer.Peek((char*)&pCSATK3, sizeof(pCSATK3));
-					player.recvBuffer.Dequeue(sizeof(pCSATK3));
-
-					if (abs(player.x - pCSATK3.x) > RANGE_MOVE_ERROR || abs(player.y - pCSATK3.y) > RANGE_MOVE_ERROR)
-					{
-						break;
-					}
-
-					player.dir = pCSATK3.dir;
-					player.x = pCSATK3.x;
-					player.y = pCSATK3.y;
-
-					pSCATK3Header.code = 0x89;
-					pSCATK3Header.size = sizeof(pSCATK3);
-					pSCATK3Header.type = (BYTE)ePacketType::PACKET_SC_ATTACK_3;
-
-					pDMGHeader.code = 0x89;
-					pDMGHeader.size = sizeof(pDMG);
-					pDMGHeader.type = (BYTE)ePacketType::PACKET_SC_DAMAGE;
-
-					for (auto opponentIt = g_PlayerList.begin(); opponentIt != g_PlayerList.end(); ++opponentIt)
-					{
-						Player& opponentPlayer = opponentIt->second;
-
-						if (opponentIt->first == it->first)
-						{
-							continue;
-						}
-
-						if (abs(player.x - opponentPlayer.x) > RANGE_ATTACK_2_X || abs(player.y - opponentPlayer.y) > RANGE_ATTACK_2_Y)
-						{
-							continue;
-						}
-
-						if (opponentPlayer.hp < 3)
-						{
-							opponentPlayer.hp = 0;
-							
-							auto result = DeleteUser(opponentIt->first);
-							/*
-							DeleteUser 시 g_PlayerList에서 제거됨. 관련 문제 해결 필요.
-							*/
-						}
-						else
-						{
-							opponentPlayer.hp -= 3;
-						}
-
-						pSCATK3.id = it->first;
-						pSCATK3.dir = player.dir;
-						pSCATK3.x = player.x;
-						pSCATK3.y = player.y;
-
-						pDMG.attackId = it->first;
-						pDMG.damagedId = opponentIt->first;
-						pDMG.damagedHp = opponentPlayer.hp;
-
-						SendBroadcast(&player.id, 1, sizeof(pSCATK3Header), (char*)&pSCATK3Header);
-						SendBroadcast(&player.id, 1, sizeof(pSCATK3), (char*)&pSCATK3);
-
-						SendBroadcast(NULL, 0, sizeof(pDMGHeader), (char*)&pDMGHeader);
-						SendBroadcast(NULL, 0, sizeof(pDMG), (char*)&pDMG);
-					}
-
+					PacketAttack3Proc(&player, buf);
+					wprintf(L"# <Packet Received> - [ATTACK_3] : Client(%d) / Dir : %d / X : %d / Y : %d\n", player.id, player.dir, player.x, player.y);
 					break;
 				}
 			case ePacketType::PACKET_CS_SYNC:
@@ -332,6 +91,321 @@ void ReadRecvBufferProc(void)
 	}
 }
 
+void PacketMoveStartProc(Player* pPlayer, char* pPacket)
+{
+	PacketHeader pSCMSHeader;
+	PacketSCMoveStart pSCMS;
+	PacketCSMoveStart* pPCSMS;
+
+	pPCSMS = (PacketCSMoveStart*)pPacket;
+
+	if (abs(pPlayer->x - pPCSMS->x) > RANGE_MOVE_ERROR || abs(pPlayer->y - pPCSMS->y) > RANGE_MOVE_ERROR)
+	{
+		return;
+	}
+
+	pPlayer->status = ePlayerStatus::MOVE;
+
+	switch ((eMoveDir)pPCSMS->dir)
+	{
+	case eMoveDir::RU:
+	case eMoveDir::RR:
+	case eMoveDir::RD:
+		{
+			pPlayer->dir = (BYTE)eMoveDir::RR;
+			break;
+		}
+	case eMoveDir::LU:
+	case eMoveDir::LL:
+	case eMoveDir::LD:
+		{
+			pPlayer->dir = (BYTE)eMoveDir::LL;
+			break;
+		}
+	default:
+		break;
+	}
+
+	pPlayer->x = pPCSMS->x;
+	pPlayer->y = pPCSMS->y;
+
+	CreatePacketMoveStart(&pSCMSHeader, &pSCMS, pPlayer->id, pPlayer->dir, pPlayer->x, pPlayer->y);
+
+	SendBroadcast(&pPlayer->id, 1, sizeof(pSCMSHeader), (char*)&pSCMSHeader);
+	SendBroadcast(&pPlayer->id, 1, sizeof(pSCMS), (char*)&pSCMS);
+	
+	return;
+}
+
+void PacketMoveStopProc(Player* pPlayer, char* pPacket)
+{
+	PacketHeader pSCMSHeader;
+	PacketSCMoveStop pSCMS;
+	PacketCSMoveStop* pPCSMS;
+
+	pPCSMS = (PacketCSMoveStop*)pPacket;
+
+	if (abs(pPlayer->x - pPCSMS->x) > RANGE_MOVE_ERROR || abs(pPlayer->y - pPCSMS->y) > RANGE_MOVE_ERROR)
+	{
+		return;
+	}
+
+	pPlayer->status = ePlayerStatus::IDLE;
+
+	switch ((eMoveDir)pPCSMS->dir)
+	{
+	case eMoveDir::RU:
+	case eMoveDir::RR:
+	case eMoveDir::RD:
+		{
+			pPlayer->dir = (BYTE)eMoveDir::RR;
+			break;
+		}
+	case eMoveDir::LU:
+	case eMoveDir::LL:
+	case eMoveDir::LD:
+		{
+			pPlayer->dir = (BYTE)eMoveDir::LL;
+			break;
+		}
+	default:
+		break;
+	}
+
+	pPlayer->x = pPCSMS->x;
+	pPlayer->y = pPCSMS->y;
+
+	CreatePacketMoveStop(&pSCMSHeader, &pSCMS, pPlayer->id, pPlayer->dir, pPlayer->x, pPlayer->y);
+
+	SendBroadcast(&pPlayer->id, 1, sizeof(pSCMSHeader), (char*)&pSCMSHeader);
+	SendBroadcast(&pPlayer->id, 1, sizeof(pSCMS), (char*)&pSCMS);
+
+	return;
+}
+
+void PacketAttack1Proc(Player* pPlayer, char* pPacket)
+{
+	{
+		PacketHeader pSCAtkHeader;
+		PacketSCAttack1 pSCAtk;
+		PacketCSAttack1* pPCSAtk;
+
+		PacketHeader pDmgHeader;
+		PacketSCDamage pDmg;
+
+		pPCSAtk = (PacketCSAttack1*)pPacket;
+
+		if (abs(pPlayer->x - pPCSAtk->x) > RANGE_MOVE_ERROR || abs(pPlayer->y - pPCSAtk->y) > RANGE_MOVE_ERROR)
+		{
+			return;
+		}
+
+		pPlayer->status = ePlayerStatus::ATTACK;
+
+		switch ((eMoveDir)pPCSAtk->dir)
+		{
+		case eMoveDir::RU:
+		case eMoveDir::RR:
+		case eMoveDir::RD:
+			{
+				pPlayer->dir = (BYTE)eMoveDir::RR;
+				break;
+			}
+		case eMoveDir::LU:
+		case eMoveDir::LL:
+		case eMoveDir::LD:
+			{
+				pPlayer->dir = (BYTE)eMoveDir::LL;
+				break;
+			}
+		default:
+			break;
+		}
+
+		pPlayer->x = pPCSAtk->x;
+		pPlayer->y = pPCSAtk->y;
+
+		CreatePacketAttack1(&pSCAtkHeader, &pSCAtk, pPlayer->id, pPlayer->dir, pPlayer->x, pPlayer->y);
+
+		SendBroadcast(&pPlayer->id, 1, sizeof(pSCAtkHeader), (char*)&pSCAtkHeader);
+		SendBroadcast(&pPlayer->id, 1, sizeof(pSCAtk), (char*)&pSCAtk);
+
+		for (auto it = g_PlayerList.begin(); it != g_PlayerList.end(); ++it)
+		{
+			if (it->second.status == ePlayerStatus::DEAD)
+			{
+				continue;
+			}
+
+			if (abs(pPlayer->x - it->second.x) > RANGE_ATTACK_2_X || abs(pPlayer->y - it->second.y) > RANGE_ATTACK_2_Y)
+			{
+				continue;
+			}
+
+			it->second.hp -= 1;
+
+			CreatePacketDamage(&pDmgHeader, &pDmg, pPlayer->id, it->second.id, it->second.hp);
+
+			SendBroadcast(NULL, 0, sizeof(pDmgHeader), (char*)&pDmgHeader);
+			SendBroadcast(NULL, 0, sizeof(pDmg), (char*)&pDmg);
+		}
+
+		return;
+	}
+}
+
+void PacketAttack2Proc(Player* pPlayer, char* pPacket)
+{
+	PacketHeader pSCAtkHeader;
+	PacketSCAttack2 pSCAtk;
+	PacketCSAttack2* pPCSAtk;
+
+	PacketHeader pDmgHeader;
+	PacketSCDamage pDmg;
+
+	pPCSAtk = (PacketCSAttack2*)pPacket;
+
+	if (abs(pPlayer->x - pPCSAtk->x) > RANGE_MOVE_ERROR || abs(pPlayer->y - pPCSAtk->y) > RANGE_MOVE_ERROR)
+	{
+		return;
+	}
+
+	pPlayer->status = ePlayerStatus::ATTACK;
+
+	switch ((eMoveDir)pPCSAtk->dir)
+	{
+	case eMoveDir::RU:
+	case eMoveDir::RR:
+	case eMoveDir::RD:
+		{
+			pPlayer->dir = (BYTE)eMoveDir::RR;
+			break;
+		}
+	case eMoveDir::LU:
+	case eMoveDir::LL:
+	case eMoveDir::LD:
+		{
+			pPlayer->dir = (BYTE)eMoveDir::LL;
+			break;
+		}
+	default:
+		break;
+	}
+
+	pPlayer->x = pPCSAtk->x;
+	pPlayer->y = pPCSAtk->y;
+
+	CreatePacketAttack2(&pSCAtkHeader, &pSCAtk, pPlayer->id, pPlayer->dir, pPlayer->x, pPlayer->y);
+
+	SendBroadcast(&pPlayer->id, 1, sizeof(pSCAtkHeader), (char*)&pSCAtkHeader);
+	SendBroadcast(&pPlayer->id, 1, sizeof(pSCAtk), (char*)&pSCAtk);
+
+	for (auto it = g_PlayerList.begin(); it != g_PlayerList.end(); ++it)
+	{
+		if (it->second.status == ePlayerStatus::DEAD)
+		{
+			continue;
+		}
+
+		if (abs(pPlayer->x - it->second.x) > RANGE_ATTACK_2_X || abs(pPlayer->y - it->second.y) > RANGE_ATTACK_2_Y)
+		{
+			continue;
+		}
+
+		if (it->second.hp < 2)
+		{
+			it->second.hp = 0;
+		}
+		else
+		{
+			it->second.hp -= 2;
+		}
+
+		CreatePacketDamage(&pDmgHeader, &pDmg, pPlayer->id, it->second.id, it->second.hp);
+
+		SendBroadcast(NULL, 0, sizeof(pDmgHeader), (char*)&pDmgHeader);
+		SendBroadcast(NULL, 0, sizeof(pDmg), (char*)&pDmg);
+	}
+
+	return;
+}
+
+void PacketAttack3Proc(Player* pPlayer, char* pPacket)
+{
+	PacketHeader pSCAtkHeader;
+	PacketSCAttack3 pSCAtk;
+	PacketCSAttack3* pPCSAtk;
+
+	PacketHeader pDmgHeader;
+	PacketSCDamage pDmg;
+
+	pPCSAtk = (PacketCSAttack3*)pPacket;
+
+	if (abs(pPlayer->x - pPCSAtk->x) > RANGE_MOVE_ERROR || abs(pPlayer->y - pPCSAtk->y) > RANGE_MOVE_ERROR)
+	{
+		return;
+	}
+
+	pPlayer->status = ePlayerStatus::ATTACK;
+
+	switch ((eMoveDir)pPCSAtk->dir)
+	{
+	case eMoveDir::RU:
+	case eMoveDir::RR:
+	case eMoveDir::RD:
+		{
+			pPlayer->dir = (BYTE)eMoveDir::RR;
+			break;
+		}
+	case eMoveDir::LU:
+	case eMoveDir::LL:
+	case eMoveDir::LD:
+		{
+			pPlayer->dir = (BYTE)eMoveDir::LL;
+			break;
+		}
+	default:
+		break;
+	}
+
+	pPlayer->x = pPCSAtk->x;
+	pPlayer->y = pPCSAtk->y;
+
+	CreatePacketAttack3(&pSCAtkHeader, &pSCAtk, pPlayer->id, pPlayer->dir, pPlayer->x, pPlayer->y);
+
+	SendBroadcast(&pPlayer->id, 1, sizeof(pSCAtkHeader), (char*)&pSCAtkHeader);
+	SendBroadcast(&pPlayer->id, 1, sizeof(pSCAtk), (char*)&pSCAtk);
+
+	for (auto it = g_PlayerList.begin(); it != g_PlayerList.end(); ++it)
+	{
+		if (it->second.status == ePlayerStatus::DEAD)
+		{
+			continue;
+		}
+
+		if (abs(pPlayer->x - it->second.x) > RANGE_ATTACK_3_X || abs(pPlayer->y - it->second.y) > RANGE_ATTACK_3_Y)
+		{
+			continue;
+		}
+
+		if (it->second.hp < 3)
+		{
+			it->second.hp = 0;
+		}
+		else
+		{
+			it->second.hp -= 3;
+		}
+
+		CreatePacketDamage(&pDmgHeader, &pDmg, pPlayer->id, it->second.id, it->second.hp);
+
+		SendBroadcast(NULL, 0, sizeof(pDmgHeader), (char*)&pDmgHeader);
+		SendBroadcast(NULL, 0, sizeof(pDmg), (char*)&pDmg);
+	}
+
+	return;
+}
+
 void LogicProc(void)
 {
 	if (g_DeltaTime < MAX_FRAME_TIME)
@@ -339,57 +413,181 @@ void LogicProc(void)
 		return;
 	}
 
-	// TODO...
-
-	/*
-		Move processing
-	*/
 	for (auto it = g_PlayerList.begin(); it != g_PlayerList.end(); ++it)
 	{
 		Player& player = it->second;
 
-		if (!player.bMoving)
+		if (player.status == ePlayerStatus::DEAD)
 		{
 			continue;
 		}
 
-		// Move Each Player By Its Direction
-		switch ((eMoveDir)player.dir)
+		if (player.hp == 0)
 		{
-		case eMoveDir::LL:
+			DeleteUser(it->first);
+			continue;
+		}
+
+		if (player.status == ePlayerStatus::MOVE)
+		{
+			// Move Each Player By Its Direction
+			switch ((eMoveDir)player.dir)
 			{
+			case eMoveDir::LL:
+				{
+					if (player.x > RANGE_MOVE_LEFT)
+					{
+						player.x -= 3;
+
+						if (player.x < RANGE_MOVE_LEFT)
+						{
+							player.x = RANGE_MOVE_LEFT;
+						}
+
+						wprintf(L"[Move] - Client(%d) / DIR : LL / X : %d / Y : %d\n", player.id, player.x, player.y);
+					}
+
+					break;
+				}
+			case eMoveDir::LU:
+				{
+					if (player.x > RANGE_MOVE_LEFT && player.y > RANGE_MOVE_TOP)
+					{
+						player.x -= 3;
+						player.y -= 2;
+
+						if (player.x < RANGE_MOVE_LEFT)
+						{
+							player.x = RANGE_MOVE_LEFT;
+						}
+
+						if (player.y < RANGE_MOVE_TOP)
+						{
+							player.y = RANGE_MOVE_TOP;
+						}
+
+						wprintf(L"[Move] - Client(%d) / DIR : LU / X : %d / Y : %d\n", player.id, player.x, player.y);
+					}
+
+					break;
+				}
+			case eMoveDir::UU:
+				{
+					if (player.y > RANGE_MOVE_TOP)
+					{
+						player.y -= 2;
+
+						if (player.y < RANGE_MOVE_TOP)
+						{
+							player.y = RANGE_MOVE_TOP;
+						}
+
+						wprintf(L"[Move] - Client(%d) / DIR : UU / X : %d / Y : %d\n", player.id, player.x, player.y);
+					}
+
+					break;
+				}
+			case eMoveDir::RU:
+				{
+					if (player.x < RANGE_MOVE_RIGHT && player.y > RANGE_MOVE_TOP)
+					{
+						player.x += 3;
+						player.y -= 2;
+
+						if (player.x > RANGE_MOVE_RIGHT)
+						{
+							player.x = RANGE_MOVE_RIGHT;
+						}
+
+						if (player.y < RANGE_MOVE_TOP)
+						{
+							player.y = RANGE_MOVE_TOP;
+						}
+
+						wprintf(L"[Move] - Client(%d) / DIR : RU / X : %d / Y : %d\n", player.id, player.x, player.y);
+					}
+
+					break;
+				}
+			case eMoveDir::RR:
+				{
+					if (player.x < RANGE_MOVE_RIGHT)
+					{
+						player.x += 3;
+
+						if (player.x > RANGE_MOVE_RIGHT)
+						{
+							player.x = RANGE_MOVE_RIGHT;
+						}
+
+						wprintf(L"[Move] - Client(%d) / DIR : RR / X : %d / Y : %d\n", player.id, player.x, player.y);
+					}
+
+					break;
+				}
+			case eMoveDir::RD:
+				{
+					if (player.x < RANGE_MOVE_RIGHT && player.y < RANGE_MOVE_BOTTOM)
+					{
+						player.x += 3;
+						player.y += 2;
+
+						if (player.x > RANGE_MOVE_RIGHT)
+						{
+							player.x = RANGE_MOVE_RIGHT;
+						}
+
+						if (player.y > RANGE_MOVE_BOTTOM)
+						{
+							player.y = RANGE_MOVE_BOTTOM;
+						}
+
+						wprintf(L"[Move] - Client(%d) / DIR : RD / X : %d / Y : %d\n", player.id, player.x, player.y);
+					}
+
+					break;
+				}
+			case eMoveDir::DD:
+				{
+					if (player.y < RANGE_MOVE_BOTTOM)
+					{
+						player.y += 2;
+
+						if (player.y > RANGE_MOVE_BOTTOM)
+						{
+							player.y = RANGE_MOVE_BOTTOM;
+						}
+
+						wprintf(L"[Move] - Client(%d) / DIR : DD / X : %d / Y : %d\n", player.id, player.x, player.y);
+					}
+
+					break;
+				}
+			case eMoveDir::LD:
+				{
+					if (player.x > RANGE_MOVE_LEFT && player.y < RANGE_MOVE_BOTTOM)
+					{
+						player.x -= 3;
+						player.y += 2;
+
+						if (player.x < RANGE_MOVE_LEFT)
+						{
+							player.x = RANGE_MOVE_LEFT;
+						}
+
+						if (player.y > RANGE_MOVE_BOTTOM)
+						{
+							player.y = RANGE_MOVE_BOTTOM;
+						}
+
+						wprintf(L"[Move] - Client(%d) / DIR : LD / X : %d / Y : %d\n", player.id, player.x, player.y);
+					}
+
+					break;
+				}
+			default:
 				break;
 			}
-		case eMoveDir::LU:
-			{
-				break;
-			}
-		case eMoveDir::UU:
-			{
-				break;
-			}
-		case eMoveDir::RU:
-			{
-				break;
-			}
-		case eMoveDir::RR:
-			{
-				break;
-			}
-		case eMoveDir::RD:
-			{
-				break;
-			}
-		case eMoveDir::DD:
-			{
-				break;
-			}
-		case eMoveDir::LD:
-			{
-				break;
-			}
-		default:
-			break;
 		}
 	}
 

@@ -10,44 +10,26 @@ int main(void)
 	chrono::high_resolution_clock::time_point prevTime;
 	chrono::high_resolution_clock::duration frameTime;
 
-	if (SocketInitialize() == FALSE)
+	if (SocketInitialize() == false)
 	{
 		return 1;
 	}
 
 	curTime = chrono::high_resolution_clock::now();
 
-	while (TRUE)
+	g_DeltaTime = MAX_FRAME_TIME + 1ns;
+
+	while (!g_bShutdown)
 	{
-		BOOL result;
-		chrono::milliseconds sleepTime;
-
-		result = RecvMessageController();
-		if (result == FALSE)
-		{
-			break;
-		}
-
-		ReadRecvBufferProc();
+		MessageController();
+		PacketProc();
 		LogicProc();
-
-		result = SendMessageController();
-		if (result == FALSE)
-		{
-			break;
-		}
 
 		prevTime = curTime;
 		curTime = std::chrono::high_resolution_clock::now();
 		frameTime = curTime - prevTime;
 
 		g_DeltaTime = g_DeltaTime + frameTime;
-
-		sleepTime = chrono::duration_cast<chrono::milliseconds>(MAX_FRAME_TIME - frameTime);
-		if (sleepTime.count() > 0)
-		{
-			Sleep((DWORD)sleepTime.count());
-		}
 	}
 
 	Terminate();

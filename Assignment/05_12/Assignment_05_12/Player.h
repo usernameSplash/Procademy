@@ -22,7 +22,7 @@ constexpr int PLAYER_SPEED_Y = 2;
 
 using namespace MyDataStructure;
 
-typedef INT32 PlayerID;
+typedef __int32 PlayerID;
 
 enum class eMoveDir
 {
@@ -36,15 +36,23 @@ enum class eMoveDir
 	LD,
 };
 
+enum class ePlayerStatus
+{
+	IDLE = 0,
+	MOVE,
+	ATTACK,
+	DEAD
+};
+
 struct Player
 {
-	SOCKET clientSocket;
-	PlayerID id;
-	RingBuffer recvBuffer;
-	RingBuffer sendBuffer;
-	BOOL bMoving;
-	SHORT x;
-	SHORT y;
-	BYTE dir;
-	BYTE hp;
+	ePlayerStatus status {};
+	SOCKET clientSocket {};
+	PlayerID id {};
+	RingBuffer recvBuffer {};
+	RingBuffer sendBuffer {};
+	SHORT x {};
+	SHORT y {};
+	BYTE dir {};
+	BYTE hp {};
 };
