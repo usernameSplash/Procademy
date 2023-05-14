@@ -102,6 +102,9 @@ void MessageController(void)
 {
 	int selectRet;
 
+	FD_ZERO(&readSet);
+	FD_ZERO(&sendSet);
+
 	FD_SET(listenSocket, &readSet);
 
 	for (auto it = g_PlayerList.begin(); it != g_PlayerList.end(); ++it)
@@ -244,6 +247,7 @@ void AcceptProc(void)
 		}
 
 		CreatePacketCreateOtherCharacter(&pCOCHeader, &pCOC, it->first, it->second.dir, it->second.x, it->second.y, it->second.hp);
+		SendUnicast(newPlayer.id, sizeof(pCOCHeader), (char*)&pCOCHeader);
 		SendUnicast(newPlayer.id, sizeof(pCOC), (char*)&pCOC);
 	}
 
@@ -486,8 +490,11 @@ void DisconnectPlayers(void)
 		SendBroadcast(NULL, 0, sizeof(pDC), (char*)&pDC);
 
 		wprintf(L"Disconnect : Client(%d)\n", it->first);
+
+		it = g_PlayerList.erase(it);
 	}
 
+	wprintf(L"Disconnect Success\n");
 	s_CurDead = 0;
 }
 
