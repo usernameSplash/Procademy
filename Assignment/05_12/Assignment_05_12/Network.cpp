@@ -222,7 +222,7 @@ void AcceptProc(void)
 	newPlayer.x = (rand() % (RANGE_MOVE_RIGHT - RANGE_MOVE_LEFT)) + RANGE_MOVE_LEFT;
 	newPlayer.y = (rand() % (RANGE_MOVE_BOTTOM - RANGE_MOVE_TOP)) + RANGE_MOVE_TOP;
 	newPlayer.dir = (BYTE)(rand() % 2 * 4); // value is 0(LL) or 4(RR);
-	newPlayer.hp = 1;
+	newPlayer.hp = 100;
 	s_CurId++;
 
 	CreatePacketCreateMyCharacter(&pCMCHeader, &pCMC, newPlayer.id, newPlayer.dir, newPlayer.x, newPlayer.y, newPlayer.hp);
