@@ -9,14 +9,18 @@ using namespace MyDataStruct;
 
 void Test0(void);
 void Test1(void);
+void Test2(void);
 
 #define MY_SEED 3000
 
 int main(void)
 {
 	srand(MY_SEED);
-	//Test0();
+
+	Test0();
 	Test1();
+	Test2();
+
 	return 0;
 }
 
@@ -49,9 +53,9 @@ void Test1(void)
 	std::vector<long long> v;
 	v.reserve(500);
 
-	for (size_t iCnt = 0; iCnt < 250; iCnt++)
+	for (size_t iCnt = 0; iCnt < 500; iCnt++)
 	{
-		printf("%zu\n", iCnt);
+		printf("%zu ", iCnt);
 		long long value = ((short)rand() << 48) + ((short)rand() << 32) + ((short)rand() << 16) + ((short)rand());
 		
 		int typeNum = iCnt % 12;
@@ -64,7 +68,6 @@ void Test1(void)
 
 				unsigned char ucValue = (unsigned char)value;
 				s << ucValue;
-				printf("%d\n", ucValue);
 
 				assert((prevSize + sizeof(ucValue)) == s.Size());
 				break;
@@ -191,12 +194,17 @@ void Test1(void)
 			}
 		}
 		
+		printf("%zu\n", s.Size());
 		v.push_back(value);
 	}
 
-	for (size_t iCnt = 0; iCnt < 250; iCnt++)
+	printf("Input Success\n");
+
+	for (size_t iCnt = 0; iCnt < 500; iCnt++)
 	{
 		int typeNum = iCnt % 12;
+		printf("%zu ", iCnt);
+
 		switch (typeNum)
 		{
 		case 0:
@@ -206,7 +214,6 @@ void Test1(void)
 				unsigned char ucValue;
 				s >> ucValue;
 
-				printf("%d %d\n", (unsigned char)v[iCnt], ucValue);
 				assert((unsigned char)v[iCnt] == ucValue);
 				assert((prevSize - sizeof(ucValue)) == s.Size());
 				break;
@@ -345,5 +352,35 @@ void Test1(void)
 			}
 		}
 
+		printf("%zu\n", s.Size());
 	}
+
+	printf("Output Success\n");
+}
+
+void Test2(void)
+{
+	SPacket s;
+
+	short firstNum = -1;
+	for (size_t iCnt = 0; iCnt < 256; iCnt++)
+	{
+		short num = rand();
+
+		if (firstNum == -1)
+		{
+			firstNum = num;
+		}
+
+		s << num;
+	}
+
+	s << rand();
+
+	short result;
+
+	s >> result;
+
+	printf("%d %d\n", firstNum, result);
+	assert(firstNum == result);
 }

@@ -40,19 +40,7 @@ namespace MyDataStruct
 		, mCapacity(other.mCapacity)
 		, mSize(other.mSize)
 	{
-		char* srcPtr = other.mBuffer;
-		char* dstPtr = mBuffer;
-
-		size_t iCnt = 0;
-
-		while (iCnt < mSize)
-		{
-			dstPtr = srcPtr;
-			
-			iCnt++;
-			srcPtr++;
-			dstPtr++;
-		}
+		memcpy(mBuffer, other.mBuffer, mSize);
 	}
 
 	SPacket::~SPacket(void)
@@ -91,18 +79,7 @@ namespace MyDataStruct
 
 		char* newBuffer = new char[capacity];
 
-		char* srcPtr = mBuffer;
-		char* dstPtr = newBuffer;
-		size_t iCnt = 0;
-
-		while (iCnt < mSize)
-		{
-			dstPtr = srcPtr;
-
-			iCnt++;
-			srcPtr++;
-			dstPtr++;
-		}
+		memcpy(newBuffer, mBuffer, mSize);
 
 		mCapacity = capacity;
 		
