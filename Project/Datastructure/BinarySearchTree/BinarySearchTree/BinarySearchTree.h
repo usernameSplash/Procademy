@@ -21,6 +21,8 @@ namespace MyDataStructure
 		bool Contain(const int val) const;
 		void GetArray(int* const outArray, const size_t len) const;
 
+		size_t Size(void) const;
+
 		void PrintTree(void) const;
 
 	protected:
