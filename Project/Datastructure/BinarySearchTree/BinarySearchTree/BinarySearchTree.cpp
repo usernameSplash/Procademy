@@ -103,12 +103,11 @@ namespace MyDataStructure
 
 		if (targetNode->_pLeft == nullptr && targetNode->_pRight == nullptr)
 		{
-			if (targetNode == _root)
+			if (targetNode == _root)	// targetParentNode is NULL
 			{
 				_root = nullptr;
 			}
-
-			if (targetNode->_val > targetParentNode->_val)
+			else if (targetNode->_val > targetParentNode->_val)
 			{
 				targetParentNode->_pRight = nullptr;
 			}
@@ -125,8 +124,7 @@ namespace MyDataStructure
 			{
 				_root = targetNode->_pRight;
 			}
-
-			if (targetNode->_val > targetParentNode->_val)
+			else if (targetNode->_val > targetParentNode->_val)
 			{
 				targetParentNode->_pRight = targetNode->_pRight;
 			}
@@ -142,8 +140,7 @@ namespace MyDataStructure
 			{
 				_root = targetNode->_pLeft;
 			}
-
-			if (targetNode->_val > targetParentNode->_val)
+			else if (targetNode->_val > targetParentNode->_val)
 			{
 				targetParentNode->_pRight = targetNode->_pLeft;
 			}
@@ -197,6 +194,11 @@ namespace MyDataStructure
 		size_t index = 0;
 		GetArrayInternal(outArray, len, _root, &index);
 		return;
+	}
+
+	size_t BinarySearchTree::Size(void) const
+	{
+		return _size;
 	}
 
 	void BinarySearchTree::PrintTree(void) const
