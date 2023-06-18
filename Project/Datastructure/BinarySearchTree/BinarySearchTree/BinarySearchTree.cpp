@@ -101,24 +101,7 @@ namespace MyDataStructure
 			return false;
 		}
 
-		if (targetNode->_pLeft == nullptr && targetNode->_pRight == nullptr)
-		{
-			if (targetNode == _root)	// targetParentNode is NULL
-			{
-				_root = nullptr;
-			}
-			else if (targetNode->_val > targetParentNode->_val)
-			{
-				targetParentNode->_pRight = nullptr;
-			}
-			else
-			{
-				targetParentNode->_pLeft = nullptr;
-			}
-
-			delete targetNode;
-		}
-		else if (targetNode->_pLeft == nullptr)
+		if (targetNode->_pLeft == nullptr)
 		{
 			if (targetNode == _root)
 			{
@@ -212,7 +195,7 @@ namespace MyDataStructure
 	{
 		Node* curNode = _root;
 
-		while (curNode != nullptr)
+		while (curNode != nullptr && curNode->_val != val)
 		{
 			if (curNode->_val > val)
 			{
@@ -223,10 +206,6 @@ namespace MyDataStructure
 			{
 				*outParentNode = curNode;
 				curNode = curNode->_pRight;
-			}
-			else
-			{
-				break;
 			}
 		}
 		
