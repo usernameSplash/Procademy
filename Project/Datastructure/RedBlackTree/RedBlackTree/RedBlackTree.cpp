@@ -347,7 +347,7 @@ namespace MyDataStructure
 
 		PrintTreeInternal(curNode->_pLeft, order, depth + 1);
 
-		ConsoleManager::SetCursorPosition(order * 3, depth);
+		ConsoleManager::SetCursorPosition(order * 3, depth * 2);
 		if (curNode->_color == eNodeColor::Black)
 		{
 			ConsoleManager::SetCursorColor(ConsoleManager::eConsoleColor::BLUE);
