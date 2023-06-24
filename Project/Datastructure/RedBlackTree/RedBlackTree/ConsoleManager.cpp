@@ -15,15 +15,3 @@ void ConsoleManager::SetCursorColor(const eConsoleColor color)
 
 	SetConsoleTextAttribute(handle, static_cast<WORD>(color));
 }
-
-void ConsoleManager::ShowConsoleColor(const bool flag)
-{
-	HANDLE handle = GetStdHandle(STD_OUTPUT_HANDLE);
-
-	CONSOLE_CURSOR_INFO cursorInfo;
-	GetConsoleCursorInfo(handle, &cursorInfo);
-	
-	cursorInfo.bVisible = flag;
-
-	SetConsoleCursorInfo(handle, &cursorInfo);
-}

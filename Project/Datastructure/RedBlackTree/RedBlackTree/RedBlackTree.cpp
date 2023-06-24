@@ -3,6 +3,7 @@
 
 #include <cstdio>
 #include <cassert>
+#include <cstdlib>
 
 namespace MyDataStructure
 {
@@ -97,6 +98,17 @@ namespace MyDataStructure
 			{
 				targetParentNode->_pLeft = targetNode->_pRight;
 			}
+			
+			if (targetNode->_pRight != _nil)
+			{
+				targetNode->_pRight->_pParent = targetParentNode;
+			}
+
+			if (targetNode->_color == eNodeColor::Black)
+			{
+				RebalanceDelete(targetNode->_pRight, targetParentNode);
+			}
+
 			delete targetNode;
 		}
 		else if (targetNode->_pRight == _nil)
@@ -113,6 +125,14 @@ namespace MyDataStructure
 			{
 				targetParentNode->_pLeft = targetNode->_pLeft;
 			}
+
+			targetNode->_pLeft->_pParent = targetParentNode;
+
+			if (targetNode->_color == eNodeColor::Black)
+			{
+				RebalanceDelete(targetNode->_pLeft, targetParentNode);
+			}
+
 			delete targetNode;
 		}
 		else
@@ -130,11 +150,26 @@ namespace MyDataStructure
 
 			if (nextParentNode == targetNode)
 			{
-				nextParentNode->_pRight = _nil;
+				nextParentNode->_pRight = nextNode->_pRight;
+
+				if (nextNode->_pRight != _nil)
+				{
+					nextNode->_pRight->_pParent = nextParentNode;
+				}
 			}
 			else
 			{
-				nextParentNode->_pLeft = _nil;
+				nextParentNode->_pLeft = nextNode->_pRight;
+
+				if (nextNode->_pRight != _nil)
+				{
+					nextNode->_pRight->_pParent = nextParentNode;
+				}
+			}
+
+			if (nextNode->_color == eNodeColor::Black)
+			{
+				RebalanceDelete(nextNode->_pRight, nextParentNode);
 			}
 
 			delete nextNode;
@@ -169,6 +204,7 @@ namespace MyDataStructure
 	void RedBlackTree::PrintTree(void) const
 	{
 		int order = 0;
+		system("cls");
 
 		PrintTreeInternal(_root, order, 0);
 		return;
@@ -197,54 +233,56 @@ namespace MyDataStructure
 		return;
 	}
 
-	void RedBlackTree::RebalanceInsert(Node* node)
+	void RedBlackTree::RebalanceInsert(Node* const node)
 	{
-		while (node->_pParent->_color == eNodeColor::Red)
+		Node* curNode = node;
+
+		while (curNode->_pParent->_color == eNodeColor::Red)
 		{
-			if (node->_pParent == node->_pParent->_pParent->_pLeft)
+			if (curNode->_pParent == curNode->_pParent->_pParent->_pLeft)
 			{
-				Node* uncle = node->_pParent->_pParent->_pRight;
+				Node* uncle = curNode->_pParent->_pParent->_pRight;
 				if (uncle->_color == eNodeColor::Red)
 				{
 					uncle->_color = eNodeColor::Black;
-					node->_pParent->_color = eNodeColor::Black;
-					node->_pParent->_pParent->_color = eNodeColor::Red;
-					node = node->_pParent->_pParent;
+					curNode->_pParent->_color = eNodeColor::Black;
+					curNode->_pParent->_pParent->_color = eNodeColor::Red;
+					curNode = curNode->_pParent->_pParent;
 				}
 				else
 				{
-					if (node == node->_pParent->_pRight)
+					if (curNode == curNode->_pParent->_pRight)
 					{
-						node = node->_pParent;
-						LeftSpin(node);
+						curNode = curNode->_pParent;
+						LeftSpin(curNode);
 					}
 
-					node->_pParent->_color = eNodeColor::Black;
-					node->_pParent->_pParent->_color = eNodeColor::Red;
-					RightSpin(node->_pParent->_pParent);
+					curNode->_pParent->_color = eNodeColor::Black;
+					curNode->_pParent->_pParent->_color = eNodeColor::Red;
+					RightSpin(curNode->_pParent->_pParent);
 				}
 			}
 			else
 			{
-				Node* uncle = node->_pParent->_pParent->_pLeft;
+				Node* uncle = curNode->_pParent->_pParent->_pLeft;
 				if (uncle->_color == eNodeColor::Red)
 				{
 					uncle->_color = eNodeColor::Black;
-					node->_pParent->_color = eNodeColor::Black;
-					node->_pParent->_pParent->_color = eNodeColor::Red;
-					node = node->_pParent->_pParent;
+					curNode->_pParent->_color = eNodeColor::Black;
+					curNode->_pParent->_pParent->_color = eNodeColor::Red;
+					curNode = curNode->_pParent->_pParent;
 				}
 				else
 				{
-					if (node == node->_pParent->_pLeft)
+					if (curNode == curNode->_pParent->_pLeft)
 					{
-						node = node->_pParent;
-						RightSpin(node);
+						curNode = curNode->_pParent;
+						RightSpin(curNode);
 					}
 
-					node->_pParent->_color = eNodeColor::Black;
-					node->_pParent->_pParent->_color = eNodeColor::Red;
-					LeftSpin(node->_pParent->_pParent);
+					curNode->_pParent->_color = eNodeColor::Black;
+					curNode->_pParent->_pParent->_color = eNodeColor::Red;
+					LeftSpin(curNode->_pParent->_pParent);
 				}
 			}
 		}
@@ -252,9 +290,92 @@ namespace MyDataStructure
 		_root->_color = eNodeColor::Black;
 	}
 
-	void RedBlackTree::RebalanceDelete(Node* node)
+	void RedBlackTree::RebalanceDelete(Node* const node, Node* const parentNode)
 	{
+		Node* curNode = node;
+		Node* curParentNode = parentNode;
 
+		while (curNode != _root && curNode->_color == eNodeColor::Black)
+		{
+			if (curNode == curParentNode->_pLeft)
+			{
+				Node* sibling = curParentNode->_pRight;
+
+				if (sibling->_color == eNodeColor::Red)
+				{
+					sibling->_color = eNodeColor::Black;
+					curParentNode->_color = eNodeColor::Red;
+					LeftSpin(curParentNode);
+					sibling = curParentNode->_pRight;
+				}
+
+				if (sibling->_pLeft->_color == eNodeColor::Black && sibling->_pRight->_color == eNodeColor::Black)
+				{
+					sibling->_color = eNodeColor::Red;
+					curNode = curParentNode;
+					curParentNode = curNode->_pParent;
+					continue;
+				}
+				else
+				{
+					if (sibling->_pLeft->_color == eNodeColor::Red && sibling->_pRight->_color == eNodeColor::Black)
+					{
+						sibling->_color = eNodeColor::Red;
+						sibling->_pLeft->_color = eNodeColor::Black;
+						RightSpin(sibling);
+
+						sibling = curParentNode->_pRight;
+					}
+
+					sibling->_color = curParentNode->_color;
+					curParentNode->_color = eNodeColor::Black;
+					sibling->_pRight->_color = eNodeColor::Black;
+					LeftSpin(curParentNode);
+
+					break;
+				}
+			}
+			else
+			{
+				Node* sibling = curParentNode->_pLeft;
+
+				if (sibling->_color == eNodeColor::Red)
+				{
+					sibling->_color = eNodeColor::Black;
+					curParentNode->_color = eNodeColor::Red;
+					RightSpin(curParentNode);
+					sibling = curParentNode->_pLeft;
+				}
+
+				if (sibling->_pLeft->_color == eNodeColor::Black && sibling->_pRight->_color == eNodeColor::Black)
+				{
+					sibling->_color = eNodeColor::Red;
+					curNode = curParentNode;
+					curParentNode = curNode->_pParent;
+					continue;
+				}
+				else
+				{
+					if (sibling->_pRight->_color == eNodeColor::Red && sibling->_pLeft->_color == eNodeColor::Black)
+					{
+						sibling->_color = eNodeColor::Red;
+						sibling->_pRight->_color = eNodeColor::Black;
+						LeftSpin(sibling);
+
+						sibling = curParentNode->_pLeft;
+					}
+
+					sibling->_color = curParentNode->_color;
+					curParentNode->_color = eNodeColor::Black;
+					sibling->_pLeft->_color = eNodeColor::Black;
+					RightSpin(curParentNode);
+
+					break;
+				}
+			}
+		}
+
+		curNode->_color = eNodeColor::Black;
 	}
 
 	void RedBlackTree::LeftSpin(Node* const node)
@@ -380,5 +501,42 @@ namespace MyDataStructure
 		delete curNode;
 
 		return;
+	}
+
+	bool RedBlackTree::VerifyTree(void)
+	{
+		int maxNumOfBlack = -1;
+
+		return VerifyTreeInternal(_root, maxNumOfBlack, 0);
+	}
+
+	bool RedBlackTree::VerifyTreeInternal(const Node* const node, int& maxBlackNum, int curBlackNum)
+	{
+		if (node->_color == eNodeColor::Black)
+		{
+			curBlackNum++;
+		}
+
+		if (node == _nil)
+		{
+			if (maxBlackNum == -1)
+			{
+				maxBlackNum = curBlackNum;
+				return true;
+			}
+			else if (maxBlackNum == curBlackNum)
+			{
+				return true;
+			}
+
+			return false;
+		}
+
+		bool result = true;
+
+		result &= VerifyTreeInternal(node->_pLeft, maxBlackNum, curBlackNum);
+		result &= VerifyTreeInternal(node->_pRight, maxBlackNum, curBlackNum);
+
+		return result;
 	}
 }

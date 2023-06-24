@@ -17,5 +17,4 @@ public:
 public:
 	static void SetCursorPosition(const INT32 x, const INT32 y);
 	static void SetCursorColor(const eConsoleColor color);
-	static void ShowConsoleColor(const bool flag);
 };
