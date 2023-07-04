@@ -9,16 +9,12 @@ namespace PathFinder
 	constexpr size_t GRID_MINIMUM_SIZE = 8;
 	constexpr size_t GRID_MAXIMUM_SIZE = 128;
 
-	enum class GridStatus
-	{
-		NORMAL = 0,
-		BLOCKED,
-		SEARCHED,
-		VISITED,
-		START,
-		DEST,
-		INVALID
-	};
+#define GRID_NORMAL 0
+#define GRID_START -1
+#define GRID_DEST -2
+#define GRID_BLOCKED -3
+#define GRID_SEARCHED -4
+#define GRID_INVALID -5
 
 	class Map
 	{
@@ -26,8 +22,8 @@ namespace PathFinder
 		Map(const size_t width, const size_t depth);
 		~Map();
 
-		void SetValue(const size_t x, const size_t y, const GridStatus status);
-		GridStatus GetValue(const size_t x, const size_t y) const;
+		void SetValue(const size_t x, const size_t y, const int status);
+		int GetValue(const size_t x, const size_t y) const;
 
 		void GridZoomIn(void);
 		void GridZoomOut(void);
@@ -40,10 +36,9 @@ namespace PathFinder
 		bool IsSetStartNode(void) const;
 		bool IsSetDestNode(void) const;
 
-
 	private:
 		bool _bUpdated;
-		std::vector<GridStatus> _grid;
+		std::vector<int> _grid;
 		size_t _width;
 		size_t _depth;
 		size_t _gridSize;

@@ -11,7 +11,7 @@ namespace PathFinder
 		, _destNode(nullptr)
 	{
 		_grid.reserve(_width * _depth);
-		_grid.resize(_width * _depth, GridStatus::NORMAL);
+		_grid.resize(_width * _depth, 0);
 	}
 
 	Map::~Map()
@@ -27,7 +27,7 @@ namespace PathFinder
 		}
 	}
 
-	void Map::SetValue(const size_t x, const size_t y, const GridStatus status)
+	void Map::SetValue(const size_t x, const size_t y, const int value)
 	{
 		if (y >= _depth || x >= _width || y < 0 || x < 0)
 		{
@@ -35,14 +35,14 @@ namespace PathFinder
 		}
 
 		_bUpdated = true;
-		_grid[_width * y + x] = status;
+		_grid[_width * y + x] = value;
 	}
 
-	GridStatus Map::GetValue(const size_t x, const size_t y) const
+	int Map::GetValue(const size_t x, const size_t y) const
 	{
 		if (y >= _depth || x >= _width || y < 0 || x < 0)
 		{
-			return GridStatus::INVALID;
+			return -2;
 		}
 
 		return _grid[_width * y + x];
@@ -77,7 +77,7 @@ namespace PathFinder
 		}
 
 		_startNode->SetPos(x, y);
-		SetValue(_startNode->_x, _startNode->_y, GridStatus::START);
+		SetValue(_startNode->_x, _startNode->_y, GRID_START);
 	}
 
 	void Map::SetDestNode(const int x, const int y)
@@ -88,13 +88,13 @@ namespace PathFinder
 		}
 
 		_destNode->SetPos(x, y);
-		SetValue(_destNode->_x, _destNode->_y, GridStatus::DEST);
+		SetValue(_destNode->_x, _destNode->_y, GRID_DEST);
 	}
 
 	void Map::ResetStartDestNode(void)
 	{
-		SetValue(_startNode->_x, _startNode->_y, GridStatus::NORMAL);
-		SetValue(_destNode->_x, _destNode->_y, GridStatus::NORMAL);
+		SetValue(_startNode->_x, _startNode->_y, GRID_NORMAL);
+		SetValue(_destNode->_x, _destNode->_y, GRID_NORMAL);
 
 		delete _startNode;
 		delete _destNode;

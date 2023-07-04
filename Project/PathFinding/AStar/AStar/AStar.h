@@ -31,7 +31,7 @@ namespace PathFinder
 		Map* _map;
 		NodeHeap _openList;
 		std::vector<Node*> _closeList;
-		std::vector<GridStatus> _grid;
+		std::vector<int> _grid;
 
 		HWND _hWnd;
 		HPEN _gridPen;

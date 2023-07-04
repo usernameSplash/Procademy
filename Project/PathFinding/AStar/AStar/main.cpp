@@ -151,7 +151,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             size_t gridX = x / g_pMap->GridSize();
             size_t gridY = y / g_pMap->GridSize();
 
-            if (g_pMap->GetValue(gridX, gridY) == PathFinder::GridStatus::BLOCKED)
+            if (g_pMap->GetValue(gridX, gridY) == GRID_BLOCKED)
             {
                 g_bErase = true;
             }
@@ -162,11 +162,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
             if (g_bErase)
             {
-                g_pMap->SetValue(gridX, gridY, PathFinder::GridStatus::NORMAL);
+                g_pMap->SetValue(gridX, gridY, GRID_NORMAL);
             }
             else
             {
-                g_pMap->SetValue(gridX, gridY, PathFinder::GridStatus::BLOCKED);
+                g_pMap->SetValue(gridX, gridY, GRID_BLOCKED);
             }
             
             InvalidateRect(hWnd, NULL, true);
@@ -188,11 +188,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
                 if (g_bErase)
                 {
-                    g_pMap->SetValue(gridX, gridY, PathFinder::GridStatus::NORMAL);
+                    g_pMap->SetValue(gridX, gridY, GRID_NORMAL);
                 }
                 else
                 {
-                    g_pMap->SetValue(gridX, gridY, PathFinder::GridStatus::BLOCKED);
+                    g_pMap->SetValue(gridX, gridY, GRID_BLOCKED);
                 }
 
                 InvalidateRect(hWnd, NULL, true);

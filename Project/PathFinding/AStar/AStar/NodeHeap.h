@@ -22,7 +22,7 @@ namespace PathFinder
 		void SetPos(const int x, const int y);
 		void Set(Node* parentNode, const Node* destNode, const Dir dir);
 
-	private:
+	public:
 		enum Weight
 		{
 			COMMON = 100,

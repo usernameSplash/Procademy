@@ -15,7 +15,7 @@ namespace PathFinder
 	{
 		_closeList.reserve(4096);
 
-		_grid.resize(_map->_grid.size(), GridStatus::NORMAL);
+		_grid.resize(_map->_grid.size(), GRID_NORMAL);
 
 		_gridPen = CreatePen(PS_SOLID, 1, RGB(200, 200, 200));
 		_pathPen = CreatePen(PS_SOLID, 2, RGB(255, 0, 0));
@@ -83,13 +83,14 @@ namespace PathFinder
 
 			size_t index = curNode->_y * _map->_width + curNode->_x;
 
-			if (_grid[index] == GridStatus::VISITED)
+			if (_grid[index] > 0)
 			{
 				continue; // pass already visited node
 			}
-			else if (_grid[index] == GridStatus::SEARCHED)
+			else if (_grid[index] == GRID_SEARCHED)
 			{
-				_grid[index] = GridStatus::VISITED;
+				_grid[index] = curNode->_f;
+				_closeList.push_back(curNode);
 			}
 
 			for (size_t iCnt = 0; iCnt < 8; iCnt++)
@@ -104,26 +105,46 @@ namespace PathFinder
 
 				size_t deltaIndex = dy * _map->_width + dx;
 
-				if (_grid[deltaIndex] == GridStatus::DEST)
+				if (_grid[deltaIndex] == GRID_DEST)
 				{
 					destNode->Set(curNode, destNode, static_cast<Dir>(iCnt));
 					_bPathFound = true;
 					goto break_loop;
 				}
-				else if (_grid[deltaIndex] == GridStatus::NORMAL)
+				else if (_grid[deltaIndex] == GRID_NORMAL || _grid[deltaIndex] == GRID_SEARCHED)
 				{
-					_grid[deltaIndex] = GridStatus::SEARCHED;
+					_grid[deltaIndex] = GRID_SEARCHED;
 
 					Node* newNode = new Node;
 					newNode->Set(curNode, destNode, static_cast<Dir>(iCnt));
 
 					_openList.push(newNode);
 				}
+				else if (_grid[deltaIndex] > 0)
+				{
+					int newF = curNode->_f;
+					if (iCnt >= static_cast<int>(Dir::LU)) // if Diagnal
+					{
+						newF += Node::DIAGNAL;
+					}
+					else
+					{
+						newF += Node::COMMON;
+					}
+
+					if (_grid[deltaIndex] > newF)
+					{
+						Node* newNode = new Node;
+						newNode->Set(curNode, destNode, static_cast<Dir>(iCnt));
+
+						_openList.push(newNode);
+					}
+				}
 			}
 
 			InvalidateRect(_hWnd, NULL, true);
 			UpdateWindow(_hWnd);
-			Sleep(10);
+			Sleep(2);
 
 			continue;
 
@@ -207,39 +228,34 @@ namespace PathFinder
 			{
 				switch (_grid[depthCount * WIDTH + widthCount])
 				{
-				case GridStatus::NORMAL:
+				case GRID_NORMAL:
 					{
 						oldBrush = (HBRUSH)SelectObject(hdc, _normalBrush);
 						break;
 					}
-				case GridStatus::BLOCKED:
-					{
-						oldBrush = (HBRUSH)SelectObject(hdc, _blockedBrush);
-						break;
-					}
-				case GridStatus::SEARCHED:
-					{
-						oldBrush = (HBRUSH)SelectObject(hdc, _searchedBrush);
-						break;
-					}
-				case GridStatus::VISITED:
-					{
-						oldBrush = (HBRUSH)SelectObject(hdc, _visitedBrush);
-						break;
-					}
-				case GridStatus::START:
+				case GRID_START:
 					{
 						oldBrush = (HBRUSH)SelectObject(hdc, _startBrush);
 						break;
 					}
-				case GridStatus::DEST:
+				case GRID_DEST:
 					{
 						oldBrush = (HBRUSH)SelectObject(hdc, _destBrush);
 						break;
 					}
+				case GRID_BLOCKED:
+					{
+						oldBrush = (HBRUSH)SelectObject(hdc, _blockedBrush);
+						break;
+					}
+				case GRID_SEARCHED:
+					{
+						oldBrush = (HBRUSH)SelectObject(hdc, _searchedBrush);
+						break;
+					}
 				default:
 					{
-						oldBrush = (HBRUSH)SelectObject(hdc, _normalBrush);
+						oldBrush = (HBRUSH)SelectObject(hdc, _visitedBrush);
 						break;
 					}
 				}
