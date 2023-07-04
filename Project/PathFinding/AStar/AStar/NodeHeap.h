@@ -12,13 +12,15 @@ namespace PathFinder
 		LU,
 		RU,
 		RD,
-		LD
+		LD,
+		NONE
 	};
 
 	class Node
 	{
 	public:
-		void Set(Node* parentNode, Node* destNode, Dir dir);
+		void SetPos(const int x, const int y);
+		void Set(Node* parentNode, const Node* destNode, const Dir dir);
 
 	private:
 		enum Weight
@@ -35,22 +37,19 @@ namespace PathFinder
 		int _y {};
 		Node* _from {};
 
-		bool operator<(const Node& other) const
+		friend class NodeHeap;
+	};
+
+	struct NodePointerComparer
+	{
+		bool operator()(const Node* a, const Node* b) const
 		{
-			return _h < other._h;
+			return a->_f > b->_f;
 		}
 	};
 
-	class NodeHeap : public std::priority_queue<Node*>
+	class NodeHeap : public std::priority_queue<Node*, std::vector<Node*>, NodePointerComparer>
 	{
-	private:
-		struct NodeLess
-		{
-			bool operator()(const Node* node, const Node* anotherNode) const
-			{
-				return node->_f > anotherNode->_f;
-			}
-		};
 	public:
 		NodeHeap(const size_t size = 4096);
 		~NodeHeap() = default;

@@ -6,10 +6,18 @@
 
 #include "Map.h"
 #include "AStar.h"
+#include "NodeHeap.h"
+
+#include <cstdio>
 
 #define MAX_LOADSTRING 100
 
 // 전역 변수:
+PathFinder::Map* g_pMap = nullptr;
+PathFinder::AStar* g_pPathFinder = nullptr;
+bool g_bErase = false;
+bool g_bDrag = false;
+
 HINSTANCE hInst;                                // 현재 인스턴스입니다.
 WCHAR szTitle[MAX_LOADSTRING];                  // 제목 표시줄 텍스트입니다.
 WCHAR szWindowClass[MAX_LOADSTRING];            // 기본 창 클래스 이름입니다.
@@ -128,6 +136,115 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     switch (message)
     {
+    case WM_CREATE:
+        {
+            g_pMap = new PathFinder::Map(100, 50);
+            g_pPathFinder = new PathFinder::AStar(g_pMap, hWnd);
+            break;
+        }
+    case WM_LBUTTONDOWN:
+        {
+            g_bDrag = true;
+
+            size_t x = GET_X_LPARAM(lParam);
+            size_t y = GET_Y_LPARAM(lParam);
+            size_t gridX = x / g_pMap->GridSize();
+            size_t gridY = y / g_pMap->GridSize();
+
+            if (g_pMap->GetValue(gridX, gridY) == PathFinder::GridStatus::BLOCKED)
+            {
+                g_bErase = true;
+            }
+            else
+            {
+                g_bErase = false;
+            }
+
+            if (g_bErase)
+            {
+                g_pMap->SetValue(gridX, gridY, PathFinder::GridStatus::NORMAL);
+            }
+            else
+            {
+                g_pMap->SetValue(gridX, gridY, PathFinder::GridStatus::BLOCKED);
+            }
+            
+            InvalidateRect(hWnd, NULL, true);
+            break;
+        }
+    case WM_LBUTTONUP:
+        {
+            g_bDrag = false;
+            break;
+        }
+    case WM_MOUSEMOVE:
+        {
+            if (g_bDrag == true)
+            {
+                int x = GET_X_LPARAM(lParam);
+                int y = GET_Y_LPARAM(lParam);
+                int gridX = x / g_pMap->GridSize();
+                int gridY = y / g_pMap->GridSize();
+
+                if (g_bErase)
+                {
+                    g_pMap->SetValue(gridX, gridY, PathFinder::GridStatus::NORMAL);
+                }
+                else
+                {
+                    g_pMap->SetValue(gridX, gridY, PathFinder::GridStatus::BLOCKED);
+                }
+
+                InvalidateRect(hWnd, NULL, true);
+            }
+        break;
+        }
+    case WM_RBUTTONDOWN:
+        {
+            int x = GET_X_LPARAM(lParam);
+            int y = GET_Y_LPARAM(lParam);
+            int gridX = x / g_pMap->GridSize();
+            int gridY = y / g_pMap->GridSize();
+
+            if (g_pMap->IsSetStartNode() == false)
+            {
+                g_pMap->SetStartNode(gridX, gridY);
+            }
+            else if (g_pMap->IsSetDestNode() == false)
+            {
+                g_pMap->SetDestNode(gridX, gridY);
+            }
+            else
+            {
+                g_pMap->ResetStartDestNode();
+            }
+
+            InvalidateRect(hWnd, NULL, true);
+
+            break;
+        }
+    case WM_MOUSEWHEEL:
+        {
+            SHORT wheel = GET_WHEEL_DELTA_WPARAM(wParam);
+
+            if (wheel > 0)
+            {
+                g_pMap->GridZoomOut();
+            }
+            else if(wheel > 0)
+            {
+                g_pMap->GridZoomIn();
+            }
+
+            InvalidateRect(hWnd, NULL, true);
+        }
+    case WM_KEYDOWN:
+        {
+            if (wParam == VK_RETURN)
+            {
+                g_pPathFinder->PathFind();
+            }
+        }
     case WM_COMMAND:
         {
             int wmId = LOWORD(wParam);
@@ -149,13 +266,17 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         {
             PAINTSTRUCT ps;
             HDC hdc = BeginPaint(hWnd, &ps);
-            // TODO: 여기에 hdc를 사용하는 그리기 코드를 추가합니다...
+            g_pPathFinder->Render(hdc);
             EndPaint(hWnd, &ps);
         }
         break;
     case WM_DESTROY:
-        PostQuitMessage(0);
-        break;
+        {
+            delete g_pPathFinder;
+            delete g_pMap;
+            PostQuitMessage(0);
+            break;
+        }
     default:
         return DefWindowProc(hWnd, message, wParam, lParam);
     }

@@ -1,17 +1,42 @@
 #include "AStar.h"
+#include <synchapi.h>
+#include <cstdio>
+
+using namespace std;
 
 namespace PathFinder
 {
-	AStar::AStar(Map* map)
-		: _map(map)
+	AStar::AStar(Map* map, HWND hWnd)
+		: _bPathFound(false)
+		, _map(map)
 		, _openList()
 		, _closeList()
+		, _hWnd(hWnd)
 	{
 		_closeList.reserve(4096);
+
+		_grid.resize(_map->_grid.size(), GridStatus::NORMAL);
+
+		_gridPen = CreatePen(PS_SOLID, 1, RGB(200, 200, 200));
+		_pathPen = CreatePen(PS_SOLID, 2, RGB(255, 0, 0));
+
+		_normalBrush = CreateSolidBrush(RGB(255, 255, 255));
+		_blockedBrush = CreateSolidBrush(RGB(100, 100, 100));
+		_searchedBrush = CreateSolidBrush(RGB(0, 0, 255));
+		_visitedBrush = CreateSolidBrush(RGB(255, 255, 0));
+		_startBrush = CreateSolidBrush(RGB(0, 255, 0));
+		_destBrush = CreateSolidBrush(RGB(255, 0, 0));
 	}
 
 	AStar::~AStar()
 	{
+		DeleteObject(_gridPen);
+		DeleteObject(_normalBrush);
+		DeleteObject(_visitedBrush);
+		DeleteObject(_blockedBrush);
+		DeleteObject(_startBrush);
+		DeleteObject(_destBrush);
+
 		DeallocAllNodes();
 	}
 
@@ -28,34 +53,87 @@ namespace PathFinder
 			{-1, 1}
 		};
 
-		if (_openList.empty() == false)
+		Node* destNode = _map->_destNode;
+
+		if (!_map->IsSetStartNode() || !_map->IsSetDestNode())
+		{
+			return;
+		}
+
+		if (_openList.empty() == false || _closeList.empty() == false)
 		{
 			DeallocAllNodes(); // if previous result is left, delete that.
 		}
 
-		_grid = _map->_grid;
-		_openList.push(_map->_startNode);
+		_bPathFound = false;
+		_bPathFinding = true;
 
+		_map->_startNode->Set(nullptr, destNode, Dir::NONE);
+		_openList.push(_map->_startNode);
+		
 		while (_openList.empty() == false)
 		{
 			Node* curNode = _openList.top();
 			_openList.pop();
-			_closeList.push_back(curNode);
+
+			FILE* file;
+			fopen_s(&file, "pathfindresult.txt", "a");
+			fprintf(file, "X : %d, Y : %d, G : %d, H : %d, F : %d\n", curNode->_x, curNode->_y, curNode->_g, curNode->_h, curNode->_f);
+			fclose(file);
+
+			size_t index = curNode->_y * _map->_width + curNode->_x;
+
+			if (_grid[index] == GridStatus::VISITED)
+			{
+				continue; // pass already visited node
+			}
+			else if (_grid[index] == GridStatus::SEARCHED)
+			{
+				_grid[index] = GridStatus::VISITED;
+			}
 
 			for (size_t iCnt = 0; iCnt < 8; iCnt++)
 			{
-				size_t index = curNode->_y * _map->_width + curNode->_x;
-				if (_grid[index] != GridStatus::VISITED || _grid[index] != GridStatus::BLOCKED)
+				size_t dx = curNode->_x + deltaPos[iCnt][0];
+				size_t dy = curNode->_y + deltaPos[iCnt][1];
+
+				if (dy < 0 || dy >= _map->_depth || dx < 0 || dx >= _map->_width)
 				{
-					_grid[index] = GridStatus::VISITED;
+					continue;
+				}
+
+				size_t deltaIndex = dy * _map->_width + dx;
+
+				if (_grid[deltaIndex] == GridStatus::DEST)
+				{
+					destNode->Set(curNode, destNode, static_cast<Dir>(iCnt));
+					_bPathFound = true;
+					goto break_loop;
+				}
+				else if (_grid[deltaIndex] == GridStatus::NORMAL)
+				{
+					_grid[deltaIndex] = GridStatus::SEARCHED;
 
 					Node* newNode = new Node;
-					newNode->Set(curNode, _map->_destNode, static_cast<Dir>(iCnt));
+					newNode->Set(curNode, destNode, static_cast<Dir>(iCnt));
 
 					_openList.push(newNode);
 				}
 			}
+
+			InvalidateRect(_hWnd, NULL, true);
+			UpdateWindow(_hWnd);
+			Sleep(10);
+
+			continue;
+
+		break_loop:
+			InvalidateRect(_hWnd, NULL, true);
+			UpdateWindow(_hWnd);
+			break;
 		}
+
+		_bPathFinding = false;
 	}
 
 	void AStar::DeallocAllNodes(void)
@@ -68,5 +146,145 @@ namespace PathFinder
 		}
 
 		_closeList.clear();
+	}
+
+	void AStar::Render(const HDC hdc)
+	{
+		UpdateMap();
+
+		RenderRectangle(hdc);
+		RenderGrid(hdc);
+		
+		if (_bPathFound)
+		{
+			RenderPath(hdc);
+		}
+	}
+
+	void AStar::RenderGrid(const HDC hdc) const
+	{
+		int x = 0;
+		int y = 0;
+		HPEN hOldPen = (HPEN)SelectObject(hdc, _gridPen);
+
+		const size_t WIDTH = _map->_width;
+		const size_t DEPTH = _map->_depth;
+		const size_t GRID_SIZE = _map->_gridSize;
+
+		for (int widthCount = 0; widthCount <= WIDTH; widthCount++)
+		{
+			MoveToEx(hdc, x, 0, NULL);
+			LineTo(hdc, x, DEPTH * GRID_SIZE);
+			x += GRID_SIZE;
+		}
+
+		for (int heightCount = 0; heightCount <= DEPTH; heightCount++)
+		{
+			MoveToEx(hdc, 0, y, NULL);
+			LineTo(hdc, WIDTH * GRID_SIZE, y);
+			y += GRID_SIZE;
+		}
+
+		SelectObject(hdc, hOldPen);
+	}
+
+	void AStar::RenderRectangle(const HDC hdc) const
+	{
+		int x;
+		int y;
+
+		SelectObject(hdc, GetStockObject(NULL_PEN));
+
+		const size_t WIDTH = _map->_width;
+		const size_t DEPTH = _map->_depth;
+		const size_t GRID_SIZE = _map->_gridSize;
+
+		HBRUSH oldBrush;
+
+		for (size_t depthCount = 0; depthCount < DEPTH; depthCount++)
+		{
+			for (size_t widthCount = 0; widthCount < WIDTH; widthCount++)
+			{
+				switch (_grid[depthCount * WIDTH + widthCount])
+				{
+				case GridStatus::NORMAL:
+					{
+						oldBrush = (HBRUSH)SelectObject(hdc, _normalBrush);
+						break;
+					}
+				case GridStatus::BLOCKED:
+					{
+						oldBrush = (HBRUSH)SelectObject(hdc, _blockedBrush);
+						break;
+					}
+				case GridStatus::SEARCHED:
+					{
+						oldBrush = (HBRUSH)SelectObject(hdc, _searchedBrush);
+						break;
+					}
+				case GridStatus::VISITED:
+					{
+						oldBrush = (HBRUSH)SelectObject(hdc, _visitedBrush);
+						break;
+					}
+				case GridStatus::START:
+					{
+						oldBrush = (HBRUSH)SelectObject(hdc, _startBrush);
+						break;
+					}
+				case GridStatus::DEST:
+					{
+						oldBrush = (HBRUSH)SelectObject(hdc, _destBrush);
+						break;
+					}
+				default:
+					{
+						oldBrush = (HBRUSH)SelectObject(hdc, _normalBrush);
+						break;
+					}
+				}
+			
+				x = static_cast<int>(widthCount * GRID_SIZE);
+				y = static_cast<int>(depthCount * GRID_SIZE);
+				Rectangle(hdc, x, y, x + GRID_SIZE + 2, y + GRID_SIZE + 2);
+				SelectObject(hdc, oldBrush);
+			}
+		}
+	}
+
+	void AStar::RenderPath(const HDC hdc) const
+	{
+		const Node* curNode = _map->_destNode;
+
+		HPEN oldPen = (HPEN)SelectObject(hdc, _pathPen);
+
+		while (true)
+		{
+			Node* parentNode = curNode->_from;
+
+			if (parentNode == nullptr)
+			{
+				break;
+			}
+
+			MoveToEx(hdc, curNode->_x * _map->_gridSize + (_map->_gridSize) / 2, curNode->_y * _map->_gridSize + (_map->_gridSize) / 2, NULL);
+			LineTo(hdc, parentNode->_x * _map->_gridSize + (_map->_gridSize) / 2, parentNode->_y * _map->_gridSize + (_map->_gridSize) / 2);
+
+			curNode = curNode->_from;
+		}
+
+		SelectObject(hdc, oldPen);
+	}
+
+	void AStar::UpdateMap(void)
+	{
+		if (_map->_bUpdated)
+		{
+			_grid = _map->_grid;
+
+			_bPathFound = false;
+			_bPathFinding = false;
+		}
+		_map->_bUpdated = false;
 	}
 }
