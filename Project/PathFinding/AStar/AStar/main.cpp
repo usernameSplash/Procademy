@@ -7,6 +7,7 @@
 #include "Map.h"
 #include "AStar.h"
 #include "NodeHeap.h"
+#include "MapController.h"
 
 #include <cstdio>
 
@@ -15,8 +16,9 @@
 // 전역 변수:
 PathFinder::Map* g_pMap = nullptr;
 PathFinder::AStar* g_pPathFinder = nullptr;
-bool g_bErase = false;
-bool g_bDrag = false;
+PathFinder::MapController* g_pMapController = nullptr;
+
+bool g_bSetStartNode = true; // when mouse rbutton pressed, set start node if this flag is true. or set dest node.
 
 HINSTANCE hInst;                                // 현재 인스턴스입니다.
 WCHAR szTitle[MAX_LOADSTRING];                  // 제목 표시줄 텍스트입니다.
@@ -56,11 +58,15 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     // 기본 메시지 루프입니다:
     while (GetMessage(&msg, nullptr, 0, 0))
     {
-        if (!TranslateAccelerator(msg.hwnd, hAccelTable, &msg))
+        while (g_pPathFinder && g_pPathFinder->IsPathFinding())
         {
-            TranslateMessage(&msg);
-            DispatchMessage(&msg);
+            g_pPathFinder->PathFind();
+            InvalidateRect(msg.hwnd, NULL, false);
+            UpdateWindow(msg.hwnd);
         }
+
+        TranslateMessage(&msg);
+        DispatchMessage(&msg);
     }
 
     return (int) msg.wParam;
@@ -138,63 +144,34 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     {
     case WM_CREATE:
         {
-            g_pMap = new PathFinder::Map(100, 50);
-            g_pPathFinder = new PathFinder::AStar(g_pMap, hWnd);
+            g_pMap = new PathFinder::Map(50, 25);
+            g_pPathFinder = new PathFinder::AStar(g_pMap);
+            g_pMapController = new PathFinder::MapController(g_pMap, g_pPathFinder);
             break;
         }
     case WM_LBUTTONDOWN:
         {
-            g_bDrag = true;
+            int x = GET_X_LPARAM(lParam);
+            int y = GET_Y_LPARAM(lParam);
 
-            size_t x = GET_X_LPARAM(lParam);
-            size_t y = GET_Y_LPARAM(lParam);
-            size_t gridX = x / g_pMap->GridSize();
-            size_t gridY = y / g_pMap->GridSize();
+            g_pMapController->StartDrag(x, y);
+            g_pMapController->SetGrid(x, y);
 
-            if (g_pMap->GetValue(gridX, gridY) == GRID_BLOCKED)
-            {
-                g_bErase = true;
-            }
-            else
-            {
-                g_bErase = false;
-            }
-
-            if (g_bErase)
-            {
-                g_pMap->SetValue(gridX, gridY, GRID_NORMAL);
-            }
-            else
-            {
-                g_pMap->SetValue(gridX, gridY, GRID_BLOCKED);
-            }
-            
             InvalidateRect(hWnd, NULL, true);
             break;
         }
     case WM_LBUTTONUP:
         {
-            g_bDrag = false;
+            g_pMapController->EndDrag();
             break;
         }
     case WM_MOUSEMOVE:
         {
-            if (g_bDrag == true)
+            if (g_pMapController->IsDragging())
             {
                 int x = GET_X_LPARAM(lParam);
                 int y = GET_Y_LPARAM(lParam);
-                int gridX = x / g_pMap->GridSize();
-                int gridY = y / g_pMap->GridSize();
-
-                if (g_bErase)
-                {
-                    g_pMap->SetValue(gridX, gridY, GRID_NORMAL);
-                }
-                else
-                {
-                    g_pMap->SetValue(gridX, gridY, GRID_BLOCKED);
-                }
-
+                g_pMapController->SetGrid(x, y);
                 InvalidateRect(hWnd, NULL, true);
             }
         break;
@@ -203,46 +180,50 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         {
             int x = GET_X_LPARAM(lParam);
             int y = GET_Y_LPARAM(lParam);
-            int gridX = x / g_pMap->GridSize();
-            int gridY = y / g_pMap->GridSize();
 
-            if (g_pMap->IsSetStartNode() == false)
+            if (g_bSetStartNode)
             {
-                g_pMap->SetStartNode(gridX, gridY);
-            }
-            else if (g_pMap->IsSetDestNode() == false)
-            {
-                g_pMap->SetDestNode(gridX, gridY);
+                g_pMapController->SetStartGrid(x, y);
             }
             else
             {
-                g_pMap->ResetStartDestNode();
+                g_pMapController->SetDestGrid(x, y);
             }
 
             InvalidateRect(hWnd, NULL, true);
 
             break;
         }
-    case WM_MOUSEWHEEL:
-        {
-            SHORT wheel = GET_WHEEL_DELTA_WPARAM(wParam);
-
-            if (wheel > 0)
-            {
-                g_pMap->GridZoomOut();
-            }
-            else if(wheel > 0)
-            {
-                g_pMap->GridZoomIn();
-            }
-
-            InvalidateRect(hWnd, NULL, true);
-        }
     case WM_KEYDOWN:
         {
-            if (wParam == VK_RETURN)
+            switch (wParam)
             {
-                g_pPathFinder->PathFind();
+            case VK_RETURN:
+                {
+                    if (g_pPathFinder->IsPathFinding() == false)
+                    {
+                        g_pPathFinder->StartPathFinding();
+                    }
+                    break;
+                }
+            case 0x44: // D Key
+                {
+                    g_bSetStartNode = false;
+                    break;
+                }
+            case 0x52: // R Key
+                {
+                    g_pMap->RemoveAllObstacles();
+                    InvalidateRect(hWnd, NULL, true);
+                    break;
+                }
+            case 0x53: // S Key
+                {
+                    g_bSetStartNode = true;
+                    break;
+                }
+            default:
+                break;
             }
         }
     case WM_COMMAND:
@@ -266,7 +247,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         {
             PAINTSTRUCT ps;
             HDC hdc = BeginPaint(hWnd, &ps);
-            g_pPathFinder->Render(hdc);
+            g_pMapController->Render(hdc);
             EndPaint(hWnd, &ps);
         }
         break;

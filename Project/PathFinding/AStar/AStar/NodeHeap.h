@@ -1,5 +1,6 @@
 #pragma once
 #include <queue>
+#include "Vector2.h"
 
 namespace PathFinder
 {
@@ -19,23 +20,16 @@ namespace PathFinder
 	class Node
 	{
 	public:
-		void SetPos(const int x, const int y);
-		void Set(Node* parentNode, const Node* destNode, const Dir dir);
+		Node(const int x, const int y, const int g, const int h, const Dir dir, Node* parentNode);
+		Node(const Vector2 pos, const int g, const int h, const Dir dir, Node* parentNode);
 
 	public:
-		enum Weight
-		{
-			COMMON = 100,
-			DIAGNAL = 141
-		};
-
-	public:
+		Vector2 _pos;
 		unsigned int _g {};
 		unsigned int _h {};
 		unsigned int _f {};
-		int _x {};
-		int _y {};
-		Node* _from {};
+		Node* _parent {};
+		Dir _dir {};
 
 		friend class NodeHeap;
 	};

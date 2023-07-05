@@ -2,114 +2,101 @@
 
 namespace PathFinder
 {
-	Map::Map(const size_t width, const size_t depth)
-		: _bUpdated(false)
-		, _width(width)
+	Map::Map(const int width, const int depth)
+		: _width(width)
 		, _depth(depth)
-		, _gridSize(16)
-		, _startNode(nullptr)
-		, _destNode(nullptr)
+		, _startPos(0, 0)
+		, _destPos(width - 1, depth - 1)
 	{
-		_grid.reserve(_width * _depth);
-		_grid.resize(_width * _depth, 0);
+		_grid.resize(_width * _depth, eGridStatus::NORMAL);
+		_oldGrid.resize(_width * _depth, eGridStatus::NORMAL);
+		_gValueGrid.resize(_width * _depth, -1);
+
+		_grid[0] = eGridStatus::START;
+		_grid[width * depth - 1] = eGridStatus::DEST;
 	}
 
 	Map::~Map()
 	{
-		if (_startNode)
-		{
-			delete _startNode;
-		}
-
-		if (_destNode)
-		{
-			delete _destNode;
-		}
 	}
 
-	void Map::SetValue(const size_t x, const size_t y, const int value)
+	void Map::SetValue(const int x, const int y, const eGridStatus status)
 	{
 		if (y >= _depth || x >= _width || y < 0 || x < 0)
 		{
 			return;
 		}
 
-		_bUpdated = true;
-		_grid[_width * y + x] = value;
+		switch (status)
+		{
+		case eGridStatus::NORMAL:
+			/* intentional fallthrough */
+		case eGridStatus::BLOCKED:
+			/* intentional fallthrough */
+		case eGridStatus::SEARCHED:
+			/* intentional fallthrough */
+		case eGridStatus::VISITED:
+			{
+				if(_grid[y * _width + x] != eGridStatus::START && _grid[y*_width+x] != eGridStatus::DEST)
+				{
+					_grid[y * _width + x] = status;
+				}
+				break;
+			}
+		case eGridStatus::START:
+			{
+				if (_grid[y * _width + x] != eGridStatus::DEST)
+				{
+					_grid[_startPos._y * _width + _startPos._x] = eGridStatus::NORMAL;
+					_grid[y * _width + x] = status;
+					_startPos = { x, y };
+				}
+				break;
+			}
+		case eGridStatus::DEST:
+			{
+				if (_grid[y * _width + x] != eGridStatus::START)
+				{
+					_grid[_destPos._y * _width + _destPos._x] = eGridStatus::NORMAL;
+					_grid[y * _width + x] = status;
+					_destPos = { x, y };
+				}
+				break;
+			}
+		default:
+			break;
+		}
 	}
 
-	int Map::GetValue(const size_t x, const size_t y) const
+	eGridStatus Map::GetValue(const int x, const int y) const
 	{
 		if (y >= _depth || x >= _width || y < 0 || x < 0)
 		{
-			return -2;
+			return eGridStatus::INVALID;
 		}
 
 		return _grid[_width * y + x];
 	}
 
-	void Map::GridZoomIn(void)
+	void Map::ResetMap(void)
 	{
-		if (_gridSize < GRID_MAXIMUM_SIZE)
+		for (int iCnt = 0; iCnt < _width * _depth; iCnt++)
 		{
-			_gridSize++;
+			if (_grid[iCnt] == eGridStatus::SEARCHED || _grid[iCnt] == eGridStatus::VISITED)
+			{
+				_grid[iCnt] = eGridStatus::NORMAL;
+			}
 		}
 	}
 
-	void Map::GridZoomOut(void)
+	void Map::RemoveAllObstacles(void)
 	{
-		if (_gridSize > GRID_MINIMUM_SIZE)
+		for (int iCnt = 0; iCnt < _width * _depth; iCnt++)
 		{
-			_gridSize--;
+			if (_grid[iCnt] == eGridStatus::BLOCKED)
+			{
+				_grid[iCnt] = eGridStatus::NORMAL;
+			}
 		}
-	}
-
-	size_t Map::GridSize(void) const
-	{
-		return _gridSize;
-	}
-	
-	void Map::SetStartNode(const int x, const int y)
-	{
-		if (_startNode == nullptr)
-		{
-			_startNode = new Node();
-		}
-
-		_startNode->SetPos(x, y);
-		SetValue(_startNode->_x, _startNode->_y, GRID_START);
-	}
-
-	void Map::SetDestNode(const int x, const int y)
-	{
-		if (_destNode == nullptr)
-		{
-			_destNode = new Node();
-		}
-
-		_destNode->SetPos(x, y);
-		SetValue(_destNode->_x, _destNode->_y, GRID_DEST);
-	}
-
-	void Map::ResetStartDestNode(void)
-	{
-		SetValue(_startNode->_x, _startNode->_y, GRID_NORMAL);
-		SetValue(_destNode->_x, _destNode->_y, GRID_NORMAL);
-
-		delete _startNode;
-		delete _destNode;
-
-		_startNode = nullptr;
-		_destNode = nullptr;
-	}
-
-	bool Map::IsSetStartNode(void) const
-	{
-		return (_startNode != nullptr);
-	}
-
-	bool Map::IsSetDestNode(void) const
-	{
-		return (_destNode != nullptr);
 	}
 }
