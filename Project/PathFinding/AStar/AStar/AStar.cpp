@@ -11,26 +11,14 @@ namespace PathFinder
 
 	AStar::~AStar()
 	{
-		DeallocAllNodes();
 	}
 
 	void AStar::PathFind()
 	{
-		Vector2 deltaPos[8] = {
-			Vector2{-1, 0},
-			Vector2{0, -1},
-			Vector2{1, 0},
-			Vector2{0, 1},
-			Vector2{-1, -1},
-			Vector2{1, -1},
-			Vector2{1, 1},
-			Vector2{-1, 1}
-		};
-
 		if (_openList.empty())
 		{
 			_bPathFound = false;
-			goto FINISHED_PATH_FINDING;
+			goto FAILED_PATH_FINDING;
 		}
 
 		Node* curNode;
@@ -48,8 +36,16 @@ namespace PathFinder
 			}
 			else if (_openList.empty())
 			{
-				goto FINISHED_PATH_FINDING;
+				goto FAILED_PATH_FINDING;
 			}
+		}
+
+		if (_map->_grid[index] == eGridStatus::DEST)
+		{
+			_bPathFound = true;
+			_closeList.push_back(curNode);
+			_destNode = curNode;
+			goto FINISHED_PATH_FINDING;
 		}
 
 		if (_map->_grid[index] == eGridStatus::SEARCHED)
@@ -60,8 +56,8 @@ namespace PathFinder
 
 		for (int iCnt = 0; iCnt < 8; iCnt++)
 		{
-			int dx = curNode->_pos._x + deltaPos[iCnt]._x;
-			int dy = curNode->_pos._y + deltaPos[iCnt]._y;
+			int dx = curNode->_pos._x + _deltaPos[iCnt]._x;
+			int dy = curNode->_pos._y + _deltaPos[iCnt]._y;
 
 			if (dy < 0 || dy >= _map->_depth || dx < 0 || dx >= _map->_width)
 			{
@@ -70,13 +66,7 @@ namespace PathFinder
 
 			int deltaIndex = dy * _map->_width + dx;
 
-			if (_map->_grid[deltaIndex] == eGridStatus::DEST)
-			{
-				_destNode = new Node(dx, dy, 0, 0, (Dir)iCnt, curNode);
-				_bPathFound = true;
-				goto FINISHED_PATH_FINDING;
-			}
-			else if (_map->_grid[deltaIndex] == eGridStatus::NORMAL || _map->_grid[deltaIndex] == eGridStatus::SEARCHED)
+			if (_map->_grid[deltaIndex] == eGridStatus::NORMAL || _map->_grid[deltaIndex] == eGridStatus::SEARCHED)
 			{
 				_map->_grid[deltaIndex] = eGridStatus::SEARCHED;
 
@@ -94,9 +84,9 @@ namespace PathFinder
 
 				_openList.push(newNode);
 			}
-			else if (_map->_grid[deltaIndex] == eGridStatus::VISITED /* and weight check */ )
+			else if (_map->_grid[deltaIndex] == eGridStatus::VISITED)
 			{
-				Vector2 newPos{dx, dy};
+				Vector2 newPos { dx, dy };
 				int newG = curNode->_g;
 					
 				if (iCnt >= static_cast<int>(Dir::LU)) // if Diagnal
@@ -116,10 +106,19 @@ namespace PathFinder
 					_openList.push(newNode);
 				}
 			}
+			else if (_map->_grid[deltaIndex] == eGridStatus::DEST)
+			{
+				Vector2 newPos { dx, dy };
+				Node* newNode = new Node(newPos, 0, 0, static_cast<Dir>(iCnt), curNode);
+				_openList.push(newNode);
+				break;
+			}
 		}
 
 		return;
 
+	FAILED_PATH_FINDING:
+		_bPathFound = false;
 	FINISHED_PATH_FINDING:
 		_bPathFinding = false;
 		_bTriedLastTime = true;

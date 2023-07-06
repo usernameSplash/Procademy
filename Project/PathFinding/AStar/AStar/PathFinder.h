@@ -26,7 +26,23 @@ namespace PathFinder
 		Node* GetStartNode(void) const;
 		Node* GetDestNode(void) const;
 
+		const NodeHeap& GetOpenList(void) const;
+		const std::vector<Node*> GetCloseList(void) const;
+		const std::vector<Vector2>& GetCornerList(void) const;
+
 		virtual void PathFind(void) = 0;
+
+	protected:
+		Vector2 _deltaPos[8] = {
+			Vector2{-1, 0},
+			Vector2{0, -1},
+			Vector2{1, 0},
+			Vector2{0, 1},
+			Vector2{-1, -1},
+			Vector2{1, -1},
+			Vector2{1, 1},
+			Vector2{-1, 1}
+		};
 
 	protected:
 		bool _bPathFound;
@@ -39,5 +55,6 @@ namespace PathFinder
 
 		NodeHeap _openList;
 		std::vector<Node*> _closeList;
+		std::vector<Vector2> _cornerList;
 	};
 }

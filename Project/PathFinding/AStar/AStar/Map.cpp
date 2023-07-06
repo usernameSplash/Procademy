@@ -68,6 +68,54 @@ namespace PathFinder
 		}
 	}
 
+	void Map::SetValue(const Vector2 pos, const eGridStatus status)
+	{
+		if (pos._y >= _depth || pos._x >= _width || pos._y < 0 || pos._x < 0)
+		{
+			return;
+		}
+
+		switch (status)
+		{
+		case eGridStatus::NORMAL:
+			/* intentional fallthrough */
+		case eGridStatus::BLOCKED:
+			/* intentional fallthrough */
+		case eGridStatus::SEARCHED:
+			/* intentional fallthrough */
+		case eGridStatus::VISITED:
+			{
+				if (_grid[pos._y * _width + pos._x] != eGridStatus::START && _grid[pos._y * _width + pos._x] != eGridStatus::DEST)
+				{
+					_grid[pos._y * _width + pos._x] = status;
+				}
+				break;
+			}
+		case eGridStatus::START:
+			{
+				if (_grid[pos._y * _width + pos._x] != eGridStatus::DEST)
+				{
+					_grid[_startPos._y * _width + _startPos._x] = eGridStatus::NORMAL;
+					_grid[pos._y * _width + pos._x] = status;
+					_startPos = { pos._x, pos._y };
+				}
+				break;
+			}
+		case eGridStatus::DEST:
+			{
+				if (_grid[pos._y * _width + pos._x] != eGridStatus::START)
+				{
+					_grid[_destPos._y * _width + _destPos._x] = eGridStatus::NORMAL;
+					_grid[pos._y * _width + pos._x] = status;
+					_destPos = { pos._x, pos._y };
+				}
+				break;
+			}
+		default:
+			break;
+		}
+	}
+
 	eGridStatus Map::GetValue(const int x, const int y) const
 	{
 		if (y >= _depth || x >= _width || y < 0 || x < 0)
@@ -76,6 +124,16 @@ namespace PathFinder
 		}
 
 		return _grid[_width * y + x];
+	}
+
+	eGridStatus Map::GetValue(const Vector2 pos) const
+	{
+		if (pos._y >= _depth || pos._x >= _width || pos._y < 0 || pos._x < 0)
+		{
+			return eGridStatus::INVALID;
+		}
+
+		return _grid[_width * pos._y + pos._x];
 	}
 
 	void Map::ResetMap(void)

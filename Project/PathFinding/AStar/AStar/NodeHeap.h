@@ -48,6 +48,7 @@ namespace PathFinder
 		NodeHeap(const size_t size = 4096);
 		~NodeHeap() = default;
 		
+		const std::vector<Node*>& GetContainer(void) const;
 		void Clear(void);
 	};
 }

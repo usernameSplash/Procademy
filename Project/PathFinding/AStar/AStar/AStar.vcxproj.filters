@@ -52,6 +52,9 @@
     <ClInclude Include="PathFinder.h">
       <Filter>PathFinding</Filter>
     </ClInclude>
+    <ClInclude Include="JPS.h">
+      <Filter>PathFinding</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -73,6 +76,9 @@
       <Filter>Map</Filter>
     </ClCompile>
     <ClCompile Include="PathFinder.cpp">
+      <Filter>PathFinding</Filter>
+    </ClCompile>
+    <ClCompile Include="JPS.cpp">
       <Filter>PathFinding</Filter>
     </ClCompile>
   </ItemGroup>

@@ -27,7 +27,9 @@ namespace PathFinder
 		~Map();
 
 		void SetValue(const int x, const int y, const eGridStatus status);
+		void SetValue(const Vector2 pos, const eGridStatus status);
 		eGridStatus GetValue(const int x, const int y) const;
+		eGridStatus GetValue(const Vector2 pos) const;
 
 		void ResetMap(void);
 		void RemoveAllObstacles(void);

@@ -6,16 +6,20 @@
 
 #include "Map.h"
 #include "AStar.h"
+#include "JPS.h"
 #include "NodeHeap.h"
 #include "MapController.h"
 
 #include <cstdio>
+using namespace std;
 
 #define MAX_LOADSTRING 100
 
 // 전역 변수:
 PathFinder::Map* g_pMap = nullptr;
-PathFinder::AStar* g_pPathFinder = nullptr;
+PathFinder::PathFinder* g_pPathFinder = nullptr;
+PathFinder::AStar* g_pAStar = nullptr;
+PathFinder::JPS* g_pJPS = nullptr;
 PathFinder::MapController* g_pMapController = nullptr;
 
 bool g_bSetStartNode = true; // when mouse rbutton pressed, set start node if this flag is true. or set dest node.
@@ -63,6 +67,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
             g_pPathFinder->PathFind();
             InvalidateRect(msg.hwnd, NULL, false);
             UpdateWindow(msg.hwnd);
+            Sleep(1000);
         }
 
         TranslateMessage(&msg);
@@ -144,8 +149,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     {
     case WM_CREATE:
         {
-            g_pMap = new PathFinder::Map(50, 25);
-            g_pPathFinder = new PathFinder::AStar(g_pMap);
+            g_pMap = new PathFinder::Map(80, 40);
+            g_pAStar = new PathFinder::AStar(g_pMap);
+            g_pJPS = new PathFinder::JPS(g_pMap);
+            g_pPathFinder = g_pAStar;
+
             g_pMapController = new PathFinder::MapController(g_pMap, g_pPathFinder);
             break;
         }
@@ -206,6 +214,24 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                     }
                     break;
                 }
+            case 0x31: // 1 Key
+                {
+                    if (g_pPathFinder->IsPathFinding() == false && g_pPathFinder != g_pAStar)
+                    {
+                        g_pPathFinder = g_pAStar;
+                        g_pMapController->BindPathFinder(g_pPathFinder);
+                    }
+                    break;
+                }
+            case 0x32: // 2 Key
+                {
+                    if (g_pPathFinder->IsPathFinding() == false && g_pPathFinder != g_pJPS)
+                    {
+                        g_pPathFinder = g_pJPS;
+                        g_pMapController->BindPathFinder(g_pPathFinder);
+                    }
+                    break;
+                }
             case 0x44: // D Key
                 {
                     g_bSetStartNode = false;
@@ -253,8 +279,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         break;
     case WM_DESTROY:
         {
-            delete g_pPathFinder;
             delete g_pMap;
+            delete g_pPathFinder;
+            delete g_pMapController;
             PostQuitMessage(0);
             break;
         }

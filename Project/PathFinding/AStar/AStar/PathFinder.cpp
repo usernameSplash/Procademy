@@ -9,8 +9,8 @@ namespace PathFinder
 		, _startNode(nullptr)
 		, _destNode(nullptr)
 		, _openList(4096)
-		, _closeList(4096, nullptr)
 	{
+		_closeList.reserve(4096);
 	}
 
 	PathFinder::~PathFinder()
@@ -87,5 +87,20 @@ namespace PathFinder
 	Node* PathFinder::GetDestNode(void) const
 	{
 		return _destNode;
+	}
+
+	const NodeHeap& PathFinder::GetOpenList(void) const
+	{
+		return _openList;
+	}
+
+	const std::vector<Node*> PathFinder::GetCloseList(void) const
+	{
+		return _closeList;
+	}
+
+	const std::vector<Vector2>& PathFinder::GetCornerList(void) const
+	{
+		return _cornerList;
 	}
 }

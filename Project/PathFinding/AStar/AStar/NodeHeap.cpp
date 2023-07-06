@@ -28,6 +28,11 @@ namespace PathFinder
 		c.reserve(size);
 	}
 
+	const std::vector<Node*>& NodeHeap::GetContainer(void) const
+	{
+		return c;
+	}
+
 	void NodeHeap::Clear(void)
 	{
 		for (auto it = c.begin(); it != c.end(); ++it)

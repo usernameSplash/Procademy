@@ -2,6 +2,7 @@
 #include "Map.h"
 #include "PathFinder.h"
 
+#include <vector>
 #include <Windows.h>
 
 namespace PathFinder
@@ -11,6 +12,8 @@ namespace PathFinder
 	public:
 		MapController(Map* map, PathFinder* pathFinder, unsigned int gridSize = 16);
 		~MapController();
+
+		void BindPathFinder(PathFinder* pathFinder);
 
 		void StartDrag(const int x, const int y);
 		void EndDrag(void);
@@ -26,6 +29,8 @@ namespace PathFinder
 		void RenderGrid(const HDC hdc) const;
 		void RenderRectangle(const HDC hdc) const;
 		void RenderPath(const HDC hdc) const;
+		void RenderCorner(const HDC hdc) const;
+		void RenderParentLine(const HDC hdc) const;
 
 	private:
 		Map* _map;
@@ -38,10 +43,13 @@ namespace PathFinder
 	private:
 		HPEN _gridPen;
 		HPEN _pathPen;
+		HPEN _parentLinePen;
+
 		HBRUSH _normalBrush;
 		HBRUSH _blockedBrush;
 		HBRUSH _searchedBrush;
 		HBRUSH _visitedBrush;
+		HBRUSH _cornerBrush;
 		HBRUSH _startBrush;
 		HBRUSH _destBrush;
 	};
