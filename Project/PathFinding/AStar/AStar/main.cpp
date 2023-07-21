@@ -67,7 +67,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
             g_pPathFinder->PathFind();
             InvalidateRect(msg.hwnd, NULL, false);
             UpdateWindow(msg.hwnd);
-            Sleep(1000);
+            Sleep(500);
         }
 
         TranslateMessage(&msg);

@@ -395,6 +395,8 @@ namespace PathFinder
 					{
 					case eGridStatus::BLOCKED:
 						/* intentional fallthrough */
+					case eGridStatus::SEARCHED:
+						/* intentional fallthrough */
 					case eGridStatus::START:
 						/* intentional fallthrough */
 					case eGridStatus::VISITED:
@@ -432,6 +434,8 @@ namespace PathFinder
 					switch (status)
 					{
 					case eGridStatus::BLOCKED:
+						/* intentional fallthrough */
+					case eGridStatus::SEARCHED:
 						/* intentional fallthrough */
 					case eGridStatus::START:
 						/* intentional fallthrough */
@@ -471,6 +475,8 @@ namespace PathFinder
 					{
 					case eGridStatus::BLOCKED:
 						/* intentional fallthrough */
+					case eGridStatus::SEARCHED:
+						/* intentional fallthrough */
 					case eGridStatus::START:
 						/* intentional fallthrough */
 					case eGridStatus::VISITED:
@@ -508,6 +514,8 @@ namespace PathFinder
 					switch (status)
 					{
 					case eGridStatus::BLOCKED:
+						/* intentional fallthrough */
+					case eGridStatus::SEARCHED:
 						/* intentional fallthrough */
 					case eGridStatus::START:
 						/* intentional fallthrough */
@@ -548,7 +556,7 @@ namespace PathFinder
 						outCornerPos = newPos;
 						return true;
 					}
-					else if (status == eGridStatus::BLOCKED || status == eGridStatus::START || status == eGridStatus::VISITED || status == eGridStatus::INVALID)
+					else if (status == eGridStatus::BLOCKED || status == eGridStatus::SEARCHED || status == eGridStatus::START || status == eGridStatus::VISITED || status == eGridStatus::INVALID)
 					{
 						break;
 					}
@@ -572,7 +580,7 @@ namespace PathFinder
 							outCornerPos = newPos;
 							return true;
 						}
-						else if (status == eGridStatus::BLOCKED || status == eGridStatus::START || status == eGridStatus::VISITED || status == eGridStatus::INVALID)
+						else if (status == eGridStatus::BLOCKED || status == eGridStatus::SEARCHED || status == eGridStatus::START || status == eGridStatus::VISITED || status == eGridStatus::INVALID)
 						{
 							break;
 						}
@@ -600,7 +608,7 @@ namespace PathFinder
 							outCornerPos = newPos;
 							return true;
 						}
-						else if (status == eGridStatus::BLOCKED || status == eGridStatus::START || status == eGridStatus::VISITED || status == eGridStatus::INVALID)
+						else if (status == eGridStatus::BLOCKED || status == eGridStatus::SEARCHED || status == eGridStatus::START || status == eGridStatus::VISITED || status == eGridStatus::INVALID)
 						{
 							break;
 						}
@@ -635,7 +643,7 @@ namespace PathFinder
 						outCornerPos = newPos;
 						return true;
 					}
-					else if (status == eGridStatus::BLOCKED || status == eGridStatus::START || status == eGridStatus::VISITED || status == eGridStatus::INVALID)
+					else if (status == eGridStatus::BLOCKED || status == eGridStatus::SEARCHED || status == eGridStatus::START || status == eGridStatus::VISITED || status == eGridStatus::INVALID)
 					{
 						break;
 					}
@@ -659,7 +667,7 @@ namespace PathFinder
 							outCornerPos = newPos;
 							return true;
 						}
-						else if (status == eGridStatus::BLOCKED || status == eGridStatus::START || status == eGridStatus::VISITED || status == eGridStatus::INVALID)
+						else if (status == eGridStatus::BLOCKED || status == eGridStatus::SEARCHED || status == eGridStatus::START || status == eGridStatus::VISITED || status == eGridStatus::INVALID)
 						{
 							break;
 						}
@@ -687,7 +695,7 @@ namespace PathFinder
 							outCornerPos = newPos;
 							return true;
 						}
-						else if (status == eGridStatus::BLOCKED || status == eGridStatus::START || status == eGridStatus::VISITED || status == eGridStatus::INVALID)
+						else if (status == eGridStatus::BLOCKED || status == eGridStatus::SEARCHED || status == eGridStatus::START || status == eGridStatus::VISITED || status == eGridStatus::INVALID)
 						{
 							break;
 						}
@@ -722,7 +730,7 @@ namespace PathFinder
 						outCornerPos = newPos;
 						return true;
 					}
-					else if (status == eGridStatus::BLOCKED || status == eGridStatus::START || status == eGridStatus::VISITED || status == eGridStatus::INVALID)
+					else if (status == eGridStatus::BLOCKED || status == eGridStatus::SEARCHED || status == eGridStatus::START || status == eGridStatus::VISITED || status == eGridStatus::INVALID)
 					{
 						break;
 					}
@@ -746,7 +754,7 @@ namespace PathFinder
 							outCornerPos = newPos;
 							return true;
 						}
-						else if (status == eGridStatus::BLOCKED || status == eGridStatus::START || status == eGridStatus::VISITED || status == eGridStatus::INVALID)
+						else if (status == eGridStatus::BLOCKED || status == eGridStatus::SEARCHED || status == eGridStatus::START || status == eGridStatus::VISITED || status == eGridStatus::INVALID)
 						{
 							break;
 						}
@@ -774,7 +782,7 @@ namespace PathFinder
 							outCornerPos = newPos;
 							return true;
 						}
-						else if (status == eGridStatus::BLOCKED || status == eGridStatus::START || status == eGridStatus::VISITED || status == eGridStatus::INVALID)
+						else if (status == eGridStatus::BLOCKED || status == eGridStatus::SEARCHED || status == eGridStatus::START || status == eGridStatus::VISITED || status == eGridStatus::INVALID)
 						{
 							break;
 						}
@@ -809,7 +817,7 @@ namespace PathFinder
 						outCornerPos = newPos;
 						return true;
 					}
-					else if (status == eGridStatus::BLOCKED || status == eGridStatus::START || status == eGridStatus::VISITED || status == eGridStatus::INVALID)
+					else if (status == eGridStatus::BLOCKED || status == eGridStatus::SEARCHED || status == eGridStatus::START || status == eGridStatus::VISITED || status == eGridStatus::INVALID)
 					{
 						break;
 					}
@@ -833,7 +841,7 @@ namespace PathFinder
 							outCornerPos = newPos;
 							return true;
 						}
-						else if (status == eGridStatus::BLOCKED || status == eGridStatus::START || status == eGridStatus::VISITED || status == eGridStatus::INVALID)
+						else if (status == eGridStatus::BLOCKED || status == eGridStatus::SEARCHED || status == eGridStatus::START || status == eGridStatus::VISITED || status == eGridStatus::INVALID)
 						{
 							break;
 						}
@@ -861,7 +869,7 @@ namespace PathFinder
 							outCornerPos = newPos;
 							return true;
 						}
-						else if (status == eGridStatus::BLOCKED || status == eGridStatus::START || status == eGridStatus::VISITED || status == eGridStatus::INVALID)
+						else if (status == eGridStatus::BLOCKED || status == eGridStatus::SEARCHED || status == eGridStatus::START || status == eGridStatus::VISITED || status == eGridStatus::INVALID)
 						{
 							break;
 						}
