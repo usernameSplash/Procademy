@@ -2,122 +2,75 @@
 
 #include <Windows.h>
 #include <process.h>
+#include <intrin.h>
+#include <atomic>
 
 #include <cstdio>
 
 
-void Lock0(void);
-void Lock1(void);
+void Lock(int procId);
+void Unlock(int procId);
 
-void Unlock0(void);
-void Unlock1(void);
-
-unsigned int WINAPI ThreadProc1(void* arg);
-unsigned int WINAPI ThreadProc2(void* arg);
+unsigned int WINAPI ThreadProc(void* arg);
 
 bool flag[2];
 int turn;
 
 int g_Value = 0;
-int g_ProcValue1 = 0;
-int g_ProcValue2 = 0;
+int g_ProcValue[2] = { 0, 0 };
 
-int g_Status = 0;
 
 int wmain(void)
 {
 	HANDLE threadArr[2];
 
-	threadArr[0] = (HANDLE)_beginthreadex(nullptr, 0, ThreadProc1, nullptr, 0, nullptr);
-	threadArr[1] = (HANDLE)_beginthreadex(nullptr, 0, ThreadProc2, nullptr, 0, nullptr);
+	int procId[2] = { 0, 1 };
+
+	threadArr[0] = (HANDLE)_beginthreadex(nullptr, 0, ThreadProc, (void*)&procId[0], 0, nullptr);
+	threadArr[1] = (HANDLE)_beginthreadex(nullptr, 0, ThreadProc, (void*)&procId[1], 0, nullptr);
 
 	WaitForMultipleObjects(2, threadArr, TRUE, INFINITE);
 
 	wprintf(L"g_Value : %d\n", g_Value);
-	wprintf(L"g_ProcValue1 : %d\n", g_ProcValue1);
-	wprintf(L"g_ProcValue2 : %d\n", g_ProcValue2);
+	wprintf(L"g_ProcValue1 : %d\n", g_ProcValue[0]);
+	wprintf(L"g_ProcValue2 : %d\n", g_ProcValue[1]);
 
 	return 0;
 }
 
-void Lock0(void)
+void Lock(int procId)
 {
-	turn = 0;
-	flag[0] = true;
+	int oppositeId = 1 - procId;
+	flag[procId] = true;
 
 	_mm_mfence();
+	//std::atomic_thread_fence(std::memory_order::memory_order_seq_cst);
 
-	while (flag[0] && flag[1] && turn == 0)
+	turn = oppositeId;
+
+	while (flag[oppositeId] && turn == oppositeId)
 	{
-		if (g_Status == 0x11)
-		{
-			g_Value = 0;
-			return;
-		}
 	}
-
-	g_Status |= 0x01;
 
 	return;
 }
 
-void Lock1(void)
+void Unlock(int procId)
 {
-	turn = 1;
-	flag[1] = true;
-
-	_mm_mfence();
-
-	while (flag[1] && flag[0] && turn == 1)
-	{
-		if (g_Status == 0x11)
-		{
-			g_Value = 0;
-			return;
-		}
-	}
-	
-	g_Status |= 0x10;
-
-
-	return;
+	flag[procId] = false;
 }
 
-void Unlock0(void)
+unsigned int WINAPI ThreadProc(void* arg)
 {
-	flag[0] = false;
-}
+	int procId = (*(int*)arg);
 
-void Unlock1(void)
-{
-	flag[1] = false;
-}
-
-unsigned int WINAPI ThreadProc1(void* arg)
-{
 	for (int iCnt = 0; iCnt < 100000000; iCnt++)
 	{
-		Lock0();
+		Lock(procId);
 		g_Value++;
-		g_Status &= 0x10;
-		Unlock0();
+		Unlock(procId);
 
-		g_ProcValue1++;
-	}
-
-	return 0;
-}
-
-unsigned int WINAPI ThreadProc2(void* arg)
-{
-	for (int iCnt = 0; iCnt < 100000000; iCnt++)
-	{
-		Lock1();
-		g_Value++;
-		g_Status &= 0x01;
-		Unlock1();
-
-		g_ProcValue2++;
+		g_ProcValue[procId]++;
 	}
 
 	return 0;
