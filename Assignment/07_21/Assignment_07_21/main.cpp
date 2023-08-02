@@ -42,12 +42,11 @@ void Lock(int procId)
 {
 	int oppositeId = 1 - procId;
 	flag[procId] = true;
+	turn = oppositeId;
 
 	_mm_mfence();
 	//std::atomic_thread_fence(std::memory_order::memory_order_seq_cst);
-
-	turn = oppositeId;
-
+	
 	while (flag[oppositeId] && turn == oppositeId)
 	{
 	}
@@ -64,7 +63,7 @@ unsigned int WINAPI ThreadProc(void* arg)
 {
 	int procId = (*(int*)arg);
 
-	for (int iCnt = 0; iCnt < 100000000; iCnt++)
+	for (int iCnt = 0; iCnt < 1000000000; iCnt++)
 	{
 		Lock(procId);
 		g_Value++;
