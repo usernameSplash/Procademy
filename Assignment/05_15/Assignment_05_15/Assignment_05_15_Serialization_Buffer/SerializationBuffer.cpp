@@ -8,15 +8,14 @@ namespace MyDataStruct
 	SPacket::SPacket(void)
 		: mBuffer(new char[BUFFER_DEFAULT_SIZE])
 		, mReadPos(mBuffer)
-		, mWritePos(mBuffer)
 		, mCapacity(BUFFER_DEFAULT_SIZE)
-		, mSize(0)
+		, mSize(sizeof(SPacketHeader))
 	{
-
+		mWritePos = mBuffer + sizeof(SPacketHeader);
 	}
 
 	SPacket::SPacket(size_t capacity)
-		: mSize(0)
+		: mSize(sizeof(SPacketHeader))
 	{
 		if (capacity < BUFFER_DEFAULT_SIZE)
 		{
@@ -29,7 +28,7 @@ namespace MyDataStruct
 
 		mBuffer = new char[capacity];
 		mReadPos = mBuffer;
-		mWritePos = mBuffer;
+		mWritePos = mBuffer + sizeof(SPacketHeader);
 		mCapacity = capacity;
 	}
 
@@ -97,6 +96,11 @@ namespace MyDataStruct
 		return mBuffer;
 	}
 
+	char* SPacket::GetPayloadPtr(void)
+	{
+		return mBuffer + sizeof(SPacketHeader);
+	}
+
 	size_t SPacket::MoveReadPos(size_t size)
 	{
 		if (size > mSize)
@@ -123,6 +127,11 @@ namespace MyDataStruct
 		mWritePos += size;
 
 		return size;
+	}
+
+	void SPacket::SetHeaderData(SPacketHeader header)
+	{
+		memcpy(mBuffer, &header, sizeof(SPacketHeader));
 	}
 
 	SPacket& SPacket::operator=(SPacket& rhs)

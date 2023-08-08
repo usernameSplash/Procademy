@@ -8,6 +8,11 @@ namespace MyDataStruct
 	class SPacket
 	{
 	public:
+		struct SPacketHeader
+		{
+			unsigned short len;
+		};
+
 		enum eBufferDefault
 		{
 			BUFFER_DEFAULT_SIZE = 512,
@@ -26,9 +31,12 @@ namespace MyDataStruct
 		void Reserve(size_t size);
 
 		char* GetBufferPtr(void);
+		char* GetPayloadPtr(void);
 
 		size_t MoveReadPos(size_t size);
 		size_t MoveWritePos(size_t size);
+
+		void SetHeaderData(SPacketHeader header);
 
 	public:
 		SPacket& operator=(SPacket& rhs);
