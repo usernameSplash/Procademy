@@ -22,6 +22,7 @@ namespace MyDataStructure
         void ClearBuffer(void);
         size_t MoveRear(size_t size);
         size_t MoveFront(size_t size);
+        char* GetBufferPtr(void);
         char* GetFrontBufferPtr(void);
         char* GetRearBufferPtr(void);
 

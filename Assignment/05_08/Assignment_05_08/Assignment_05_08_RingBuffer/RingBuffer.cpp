@@ -253,6 +253,11 @@ namespace MyDataStructure
 		return size;
 	}
 
+	char* RingBuffer::GetBufferPtr(void)
+	{
+		return mBuffer;
+	}
+
 	char* RingBuffer::GetFrontBufferPtr(void)
 	{
 		return mFront;
