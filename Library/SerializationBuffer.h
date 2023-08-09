@@ -15,6 +15,7 @@ namespace MyDataStruct
 
 		enum eBufferDefault
 		{
+			BUFFER_MINIMUM_SIZE = 64,
 			BUFFER_DEFAULT_SIZE = 512,
 			BUFFER_MAX_SIZE = 4096,
 		};
@@ -37,6 +38,7 @@ namespace MyDataStruct
 		size_t MoveWritePos(size_t size);
 
 		void SetHeaderData(SPacketHeader header);
+		void GetHeaderData(SPacketHeader* outHeader);
 
 	public:
 		SPacket& operator=(SPacket& rhs);
@@ -69,6 +71,7 @@ namespace MyDataStruct
 
 	protected:
 		char* mBuffer;
+		char* mPayloadPtr;
 		char* mReadPos;
 		char* mWritePos;
 		size_t mCapacity;

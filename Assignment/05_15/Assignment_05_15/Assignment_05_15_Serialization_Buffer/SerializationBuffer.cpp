@@ -7,19 +7,20 @@ namespace MyDataStruct
 {
 	SPacket::SPacket(void)
 		: mBuffer(new char[BUFFER_DEFAULT_SIZE])
-		, mReadPos(mBuffer)
-		, mCapacity(BUFFER_DEFAULT_SIZE)
-		, mSize(sizeof(SPacketHeader))
+		, mPayloadPtr(mBuffer + sizeof(SPacketHeader))
+		, mReadPos(mPayloadPtr)
+		, mWritePos(mPayloadPtr)
+		, mCapacity(BUFFER_DEFAULT_SIZE - sizeof(SPacketHeader))
+		, mSize(0)
 	{
-		mWritePos = mBuffer + sizeof(SPacketHeader);
 	}
 
 	SPacket::SPacket(size_t capacity)
 		: mSize(sizeof(SPacketHeader))
 	{
-		if (capacity < BUFFER_DEFAULT_SIZE)
+		if (capacity < BUFFER_MINIMUM_SIZE)
 		{
-			capacity = BUFFER_DEFAULT_SIZE;
+			capacity = BUFFER_MINIMUM_SIZE;
 		}
 		else if (capacity > BUFFER_MAX_SIZE)
 		{
@@ -27,19 +28,21 @@ namespace MyDataStruct
 		}
 
 		mBuffer = new char[capacity];
-		mReadPos = mBuffer;
-		mWritePos = mBuffer + sizeof(SPacketHeader);
-		mCapacity = capacity;
+		mPayloadPtr = mBuffer + sizeof(SPacketHeader);
+		mReadPos = mPayloadPtr;
+		mWritePos = mPayloadPtr;
+		mCapacity = capacity - sizeof(SPacketHeader);
 	}
 
 	SPacket::SPacket(const SPacket& other)
 		: mBuffer(new char[other.mCapacity])
-		, mReadPos(mBuffer)
-		, mWritePos(mBuffer + other.mSize)
+		, mPayloadPtr(mBuffer + sizeof(SPacketHeader))
+		, mReadPos(mPayloadPtr)
+		, mWritePos(mPayloadPtr + other.mSize)
 		, mCapacity(other.mCapacity)
 		, mSize(other.mSize)
 	{
-		memcpy(mBuffer, other.mBuffer, mSize);
+		memcpy(mBuffer, other.mBuffer, sizeof(SPacketHeader) + mSize);
 	}
 
 	SPacket::~SPacket(void)
@@ -78,15 +81,16 @@ namespace MyDataStruct
 
 		char* newBuffer = new char[capacity];
 
-		memcpy(newBuffer, mBuffer, mSize);
+		memcpy(newBuffer, mBuffer, sizeof(SPacketHeader) + mSize);
 
-		mCapacity = capacity;
+		mCapacity = capacity - sizeof(SPacketHeader);
 		
 		delete mBuffer;
 
 		mBuffer = newBuffer;
-		mReadPos = mBuffer;
-		mWritePos = mBuffer + mSize;
+		mPayloadPtr = mBuffer + sizeof(SPacketHeader);
+		mReadPos = mPayloadPtr;
+		mWritePos = mPayloadPtr + mSize;
 
 		return;
 	}
@@ -98,7 +102,7 @@ namespace MyDataStruct
 
 	char* SPacket::GetPayloadPtr(void)
 	{
-		return mBuffer + sizeof(SPacketHeader);
+		return mPayloadPtr;
 	}
 
 	size_t SPacket::MoveReadPos(size_t size)
@@ -134,6 +138,11 @@ namespace MyDataStruct
 		memcpy(mBuffer, &header, sizeof(SPacketHeader));
 	}
 
+	void SPacket::GetHeaderData(SPacketHeader* outHeader)
+	{
+		memcpy(outHeader, mBuffer, sizeof(SPacketHeader));
+	}
+
 	SPacket& SPacket::operator=(SPacket& rhs)
 	{
 		if (this != &rhs)
@@ -141,8 +150,9 @@ namespace MyDataStruct
 			delete mBuffer;
 
 			mBuffer = new char[rhs.mCapacity];
-			mReadPos = mBuffer;
-			mWritePos = mBuffer;
+			mPayloadPtr = mBuffer + sizeof(SPacketHeader);
+			mReadPos = mPayloadPtr;
+			mWritePos = mPayloadPtr;
 			mCapacity = rhs.mCapacity;
 			mSize = rhs.mSize;
 		}
@@ -152,7 +162,7 @@ namespace MyDataStruct
 
 	SPacket& SPacket::operator<<(unsigned char data)
 	{
-		if (mBuffer != mReadPos)
+		if (mPayloadPtr != mReadPos)
 		{
 #ifdef DEBUG
 			wprintf(L"[SPacket] : Do Not Input Additional Data After Any Output Behavior\n");
@@ -170,13 +180,13 @@ namespace MyDataStruct
 				return *this;
 			}
 
-			if (mCapacity * 2 > BUFFER_MAX_SIZE)
+			if ((mCapacity - sizeof(SPacketHeader)) * 2 > BUFFER_MAX_SIZE)
 			{
 				Reserve(BUFFER_MAX_SIZE);
 			}
 			else
 			{
-				Reserve(mCapacity * 2);
+				Reserve((mCapacity - sizeof(SPacketHeader)) * 2);
 			}
 		}
 
@@ -189,7 +199,7 @@ namespace MyDataStruct
 
 	SPacket& SPacket::operator<<(char data)
 	{
-		if (mBuffer != mReadPos)
+		if (mPayloadPtr != mReadPos)
 		{
 #ifdef DEBUG
 			wprintf(L"[SPacket] : Do Not Input Additional Data After Any Output Behavior\n");
@@ -207,13 +217,13 @@ namespace MyDataStruct
 				return *this;
 			}
 
-			if (mCapacity * 2 > BUFFER_MAX_SIZE)
+			if ((mCapacity - sizeof(SPacketHeader)) * 2 > BUFFER_MAX_SIZE)
 			{
 				Reserve(BUFFER_MAX_SIZE);
 			}
 			else
 			{
-				Reserve(mCapacity * 2);
+				Reserve((mCapacity - sizeof(SPacketHeader)) * 2);
 			}
 		}
 
@@ -226,7 +236,7 @@ namespace MyDataStruct
 
 	SPacket& SPacket::operator<<(unsigned short data)
 	{
-		if (mBuffer != mReadPos)
+		if (mPayloadPtr != mReadPos)
 		{
 #ifdef DEBUG
 			wprintf(L"[SPacket] : Do Not Input Additional Data After Any Output Behavior\n");
@@ -244,13 +254,13 @@ namespace MyDataStruct
 				return *this;
 			}
 
-			if (mCapacity * 2 > BUFFER_MAX_SIZE)
+			if ((mCapacity - sizeof(SPacketHeader)) * 2 > BUFFER_MAX_SIZE)
 			{
 				Reserve(BUFFER_MAX_SIZE);
 			}
 			else
 			{
-				Reserve(mCapacity * 2);
+				Reserve((mCapacity - sizeof(SPacketHeader)) * 2);
 			}
 		}
 
@@ -263,7 +273,7 @@ namespace MyDataStruct
 
 	SPacket& SPacket::operator<<(short data)
 	{
-		if (mBuffer != mReadPos)
+		if (mPayloadPtr != mReadPos)
 		{
 #ifdef DEBUG
 			wprintf(L"[SPacket] : Do Not Input Additional Data After Any Output Behavior\n");
@@ -281,13 +291,13 @@ namespace MyDataStruct
 				return *this;
 			}
 
-			if (mCapacity * 2 > BUFFER_MAX_SIZE)
+			if ((mCapacity - sizeof(SPacketHeader)) * 2 > BUFFER_MAX_SIZE)
 			{
 				Reserve(BUFFER_MAX_SIZE);
 			}
 			else
 			{
-				Reserve(mCapacity * 2);
+				Reserve((mCapacity - sizeof(SPacketHeader)) * 2);
 			}
 		}
 
@@ -300,7 +310,7 @@ namespace MyDataStruct
 
 	SPacket& SPacket::operator<<(unsigned int data)
 	{
-		if (mBuffer != mReadPos)
+		if (mPayloadPtr != mReadPos)
 		{
 #ifdef DEBUG
 			wprintf(L"[SPacket] : Do Not Input Additional Data After Any Output Behavior\n");
@@ -318,13 +328,13 @@ namespace MyDataStruct
 				return *this;
 			}
 
-			if (mCapacity * 2 > BUFFER_MAX_SIZE)
+			if ((mCapacity - sizeof(SPacketHeader)) * 2 > BUFFER_MAX_SIZE)
 			{
 				Reserve(BUFFER_MAX_SIZE);
 			}
 			else
 			{
-				Reserve(mCapacity * 2);
+				Reserve((mCapacity - sizeof(SPacketHeader)) * 2);
 			}
 		}
 
@@ -337,7 +347,7 @@ namespace MyDataStruct
 
 	SPacket& SPacket::operator<<(int data)
 	{
-		if (mBuffer != mReadPos)
+		if (mPayloadPtr != mReadPos)
 		{
 #ifdef DEBUG
 			wprintf(L"[SPacket] : Do Not Input Additional Data After Any Output Behavior\n");
@@ -355,13 +365,13 @@ namespace MyDataStruct
 				return *this;
 			}
 
-			if (mCapacity * 2 > BUFFER_MAX_SIZE)
+			if ((mCapacity - sizeof(SPacketHeader)) * 2 > BUFFER_MAX_SIZE)
 			{
 				Reserve(BUFFER_MAX_SIZE);
 			}
 			else
 			{
-				Reserve(mCapacity * 2);
+				Reserve((mCapacity - sizeof(SPacketHeader)) * 2);
 			}
 		}
 
@@ -374,7 +384,7 @@ namespace MyDataStruct
 
 	SPacket& SPacket::operator<<(unsigned long data)
 	{
-		if (mBuffer != mReadPos)
+		if (mPayloadPtr != mReadPos)
 		{
 #ifdef DEBUG
 			wprintf(L"[SPacket] : Do Not Input Additional Data After Any Output Behavior\n");
@@ -392,13 +402,13 @@ namespace MyDataStruct
 				return *this;
 			}
 
-			if (mCapacity * 2 > BUFFER_MAX_SIZE)
+			if ((mCapacity - sizeof(SPacketHeader)) * 2 > BUFFER_MAX_SIZE)
 			{
 				Reserve(BUFFER_MAX_SIZE);
 			}
 			else
 			{
-				Reserve(mCapacity * 2);
+				Reserve((mCapacity - sizeof(SPacketHeader)) * 2);
 			}
 		}
 
@@ -411,7 +421,7 @@ namespace MyDataStruct
 
 	SPacket& SPacket::operator<<(long data)
 	{
-		if (mBuffer != mReadPos)
+		if (mPayloadPtr != mReadPos)
 		{
 #ifdef DEBUG
 			wprintf(L"[SPacket] : Do Not Input Additional Data After Any Output Behavior\n");
@@ -429,13 +439,13 @@ namespace MyDataStruct
 				return *this;
 			}
 
-			if (mCapacity * 2 > BUFFER_MAX_SIZE)
+			if ((mCapacity - sizeof(SPacketHeader)) * 2 > BUFFER_MAX_SIZE)
 			{
 				Reserve(BUFFER_MAX_SIZE);
 			}
 			else
 			{
-				Reserve(mCapacity * 2);
+				Reserve((mCapacity - sizeof(SPacketHeader)) * 2);
 			}
 		}
 
@@ -448,7 +458,7 @@ namespace MyDataStruct
 
 	SPacket& SPacket::operator<<(unsigned long long data)
 	{
-		if (mBuffer != mReadPos)
+		if (mPayloadPtr != mReadPos)
 		{
 #ifdef DEBUG
 			wprintf(L"[SPacket] : Do Not Input Additional Data After Any Output Behavior\n");
@@ -466,13 +476,13 @@ namespace MyDataStruct
 				return *this;
 			}
 
-			if (mCapacity * 2 > BUFFER_MAX_SIZE)
+			if ((mCapacity - sizeof(SPacketHeader)) * 2 > BUFFER_MAX_SIZE)
 			{
 				Reserve(BUFFER_MAX_SIZE);
 			}
 			else
 			{
-				Reserve(mCapacity * 2);
+				Reserve((mCapacity - sizeof(SPacketHeader)) * 2);
 			}
 		}
 
@@ -485,7 +495,7 @@ namespace MyDataStruct
 
 	SPacket& SPacket::operator<<(long long data)
 	{
-		if (mBuffer != mReadPos)
+		if (mPayloadPtr != mReadPos)
 		{
 #ifdef DEBUG
 			wprintf(L"[SPacket] : Do Not Input Additional Data After Any Output Behavior\n");
@@ -503,13 +513,13 @@ namespace MyDataStruct
 				return *this;
 			}
 
-			if (mCapacity * 2 > BUFFER_MAX_SIZE)
+			if ((mCapacity - sizeof(SPacketHeader)) * 2 > BUFFER_MAX_SIZE)
 			{
 				Reserve(BUFFER_MAX_SIZE);
 			}
 			else
 			{
-				Reserve(mCapacity * 2);
+				Reserve((mCapacity - sizeof(SPacketHeader)) * 2);
 			}
 		}
 
@@ -522,7 +532,7 @@ namespace MyDataStruct
 
 	SPacket& SPacket::operator<<(float data)
 	{
-		if (mBuffer != mReadPos)
+		if (mPayloadPtr != mReadPos)
 		{
 #ifdef DEBUG
 			wprintf(L"[SPacket] : Do Not Input Additional Data After Any Output Behavior\n");
@@ -540,13 +550,13 @@ namespace MyDataStruct
 				return *this;
 			}
 
-			if (mCapacity * 2 > BUFFER_MAX_SIZE)
+			if ((mCapacity - sizeof(SPacketHeader)) * 2 > BUFFER_MAX_SIZE)
 			{
 				Reserve(BUFFER_MAX_SIZE);
 			}
 			else
 			{
-				Reserve(mCapacity * 2);
+				Reserve((mCapacity - sizeof(SPacketHeader)) * 2);
 			}
 		}
 
@@ -559,7 +569,7 @@ namespace MyDataStruct
 
 	SPacket& SPacket::operator<<(double data)
 	{
-		if (mBuffer != mReadPos)
+		if (mPayloadPtr != mReadPos)
 		{
 #ifdef DEBUG
 			wprintf(L"[SPacket] : Do Not Input Additional Data After Any Output Behavior\n");
@@ -577,13 +587,13 @@ namespace MyDataStruct
 				return *this;
 			}
 
-			if (mCapacity * 2 > BUFFER_MAX_SIZE)
+			if ((mCapacity - sizeof(SPacketHeader)) * 2 > BUFFER_MAX_SIZE)
 			{
 				Reserve(BUFFER_MAX_SIZE);
 			}
 			else
 			{
-				Reserve(mCapacity * 2);
+				Reserve((mCapacity - sizeof(SPacketHeader)) * 2);
 			}
 		}
 
