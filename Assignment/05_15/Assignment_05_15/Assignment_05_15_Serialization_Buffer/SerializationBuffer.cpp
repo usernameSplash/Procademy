@@ -10,13 +10,16 @@ namespace MyDataStruct
 		, mPayloadPtr(mBuffer + sizeof(SPacketHeader))
 		, mReadPos(mPayloadPtr)
 		, mWritePos(mPayloadPtr)
-		, mCapacity(BUFFER_DEFAULT_SIZE - sizeof(SPacketHeader))
-		, mSize(0)
+		, mCapacity(BUFFER_DEFAULT_SIZE)
+		, mPayloadCapacity(mCapacity - sizeof(SPacketHeader))
+		, mSize(sizeof(SPacketHeader))
+		, mPayloadSize(0)
 	{
 	}
 
 	SPacket::SPacket(size_t capacity)
 		: mSize(sizeof(SPacketHeader))
+		, mPayloadSize(0)
 	{
 		if (capacity < BUFFER_MINIMUM_SIZE)
 		{
@@ -31,7 +34,8 @@ namespace MyDataStruct
 		mPayloadPtr = mBuffer + sizeof(SPacketHeader);
 		mReadPos = mPayloadPtr;
 		mWritePos = mPayloadPtr;
-		mCapacity = capacity - sizeof(SPacketHeader);
+		mCapacity = capacity;
+		mPayloadCapacity = capacity - sizeof(SPacketHeader);
 	}
 
 	SPacket::SPacket(const SPacket& other)
@@ -40,9 +44,11 @@ namespace MyDataStruct
 		, mReadPos(mPayloadPtr)
 		, mWritePos(mPayloadPtr + other.mSize)
 		, mCapacity(other.mCapacity)
+		, mPayloadCapacity(other.mPayloadCapacity)
 		, mSize(other.mSize)
+		, mPayloadSize(other.mPayloadSize)
 	{
-		memcpy(mBuffer, other.mBuffer, sizeof(SPacketHeader) + mSize);
+		memcpy(mBuffer, other.mBuffer, mSize);
 	}
 
 	SPacket::~SPacket(void)
@@ -81,9 +87,10 @@ namespace MyDataStruct
 
 		char* newBuffer = new char[capacity];
 
-		memcpy(newBuffer, mBuffer, sizeof(SPacketHeader) + mSize);
+		memcpy(newBuffer, mBuffer, mSize);
 
-		mCapacity = capacity - sizeof(SPacketHeader);
+		mCapacity = capacity;
+		mPayloadCapacity = capacity - sizeof(SPacketHeader);
 		
 		delete mBuffer;
 
@@ -154,7 +161,9 @@ namespace MyDataStruct
 			mReadPos = mPayloadPtr;
 			mWritePos = mPayloadPtr;
 			mCapacity = rhs.mCapacity;
+			mPayloadCapacity = rhs.mPayloadCapacity;
 			mSize = rhs.mSize;
+			mPayloadSize = rhs.mPayloadSize;
 		}
 	
 		return *this;
@@ -192,6 +201,7 @@ namespace MyDataStruct
 
 		memcpy(mWritePos, &data, sizeof(data));
 		mSize += sizeof(data);
+		mPayloadSize += sizeof(data);
 		mWritePos += sizeof(data);
 
 		return *this;
@@ -229,6 +239,7 @@ namespace MyDataStruct
 
 		memcpy(mWritePos, &data, sizeof(data));
 		mSize += sizeof(data);
+		mPayloadSize += sizeof(data);
 		mWritePos += sizeof(data);
 
 		return *this;
@@ -266,6 +277,7 @@ namespace MyDataStruct
 
 		memcpy(mWritePos, &data, sizeof(data));
 		mSize += sizeof(data);
+		mPayloadSize += sizeof(data);
 		mWritePos += sizeof(data);
 
 		return *this;
@@ -303,6 +315,7 @@ namespace MyDataStruct
 
 		memcpy(mWritePos, &data, sizeof(data));
 		mSize += sizeof(data);
+		mPayloadSize += sizeof(data);
 		mWritePos += sizeof(data);
 
 		return *this;
@@ -340,6 +353,7 @@ namespace MyDataStruct
 
 		memcpy(mWritePos, &data, sizeof(data));
 		mSize += sizeof(data);
+		mPayloadSize += sizeof(data);
 		mWritePos += sizeof(data);
 
 		return *this;
@@ -377,6 +391,7 @@ namespace MyDataStruct
 
 		memcpy(mWritePos, &data, sizeof(data));
 		mSize += sizeof(data);
+		mPayloadSize += sizeof(data);
 		mWritePos += sizeof(data);
 
 		return *this;
@@ -414,6 +429,7 @@ namespace MyDataStruct
 
 		memcpy(mWritePos, &data, sizeof(data));
 		mSize += sizeof(data);
+		mPayloadSize += sizeof(data);
 		mWritePos += sizeof(data);
 
 		return *this;
@@ -451,6 +467,7 @@ namespace MyDataStruct
 
 		memcpy(mWritePos, &data, sizeof(data));
 		mSize += sizeof(data);
+		mPayloadSize += sizeof(data);
 		mWritePos += sizeof(data);
 
 		return *this;
@@ -488,6 +505,7 @@ namespace MyDataStruct
 
 		memcpy(mWritePos, &data, sizeof(data));
 		mSize += sizeof(data);
+		mPayloadSize += sizeof(data);
 		mWritePos += sizeof(data);
 
 		return *this;
@@ -525,6 +543,7 @@ namespace MyDataStruct
 
 		memcpy(mWritePos, &data, sizeof(data));
 		mSize += sizeof(data);
+		mPayloadSize += sizeof(data);
 		mWritePos += sizeof(data);
 
 		return *this;
@@ -562,6 +581,7 @@ namespace MyDataStruct
 
 		memcpy(mWritePos, &data, sizeof(data));
 		mSize += sizeof(data);
+		mPayloadSize += sizeof(data);
 		mWritePos += sizeof(data);
 
 		return *this;
@@ -599,6 +619,7 @@ namespace MyDataStruct
 
 		memcpy(mWritePos, &data, sizeof(data));
 		mSize += sizeof(data);
+		mPayloadSize += sizeof(data);
 		mWritePos += sizeof(data);
 
 		return *this;
@@ -613,6 +634,7 @@ namespace MyDataStruct
 
 		data = *(unsigned char*)(mReadPos);
 		mSize -= sizeof(data);
+		mPayloadSize -= sizeof(data);
 		mReadPos += sizeof(data);
 
 		return *this;
@@ -627,6 +649,7 @@ namespace MyDataStruct
 
 		data = *mReadPos;
 		mSize -= sizeof(data);
+		mPayloadSize -= sizeof(data);
 		mReadPos += sizeof(data);
 
 		return *this;
@@ -641,6 +664,7 @@ namespace MyDataStruct
 
 		data = *(unsigned short*)(mReadPos);
 		mSize -= sizeof(data);
+		mPayloadSize -= sizeof(data);
 		mReadPos += sizeof(data);
 
 		return *this;
@@ -655,6 +679,7 @@ namespace MyDataStruct
 
 		data = *(short*)(mReadPos);
 		mSize -= sizeof(data);
+		mPayloadSize -= sizeof(data);
 		mReadPos += sizeof(data);
 
 		return *this;
@@ -669,6 +694,7 @@ namespace MyDataStruct
 
 		data = *(unsigned int*)(mReadPos);
 		mSize -= sizeof(data);
+		mPayloadSize -= sizeof(data);
 		mReadPos += sizeof(data);
 
 		return *this;
@@ -684,6 +710,7 @@ namespace MyDataStruct
 
 		data = *(int*)(mReadPos);
 		mSize -= sizeof(data);
+		mPayloadSize -= sizeof(data);
 		mReadPos += sizeof(data);
 
 		return *this;
@@ -698,6 +725,7 @@ namespace MyDataStruct
 
 		data = *(unsigned long*)(mReadPos);
 		mSize -= sizeof(data);
+		mPayloadSize -= sizeof(data);
 		mReadPos += sizeof(data);
 
 		return *this;
@@ -712,6 +740,7 @@ namespace MyDataStruct
 
 		data = *(long*)(mReadPos);
 		mSize -= sizeof(data);
+		mPayloadSize -= sizeof(data);
 		mReadPos += sizeof(data);
 
 		return *this;
@@ -727,6 +756,7 @@ namespace MyDataStruct
 
 		data = *(unsigned long long*)(mReadPos);
 		mSize -= sizeof(data);
+		mPayloadSize -= sizeof(data);
 		mReadPos += sizeof(data);
 
 		return *this;
@@ -742,6 +772,7 @@ namespace MyDataStruct
 
 		data = *(long long*)(mReadPos);
 		mSize -= sizeof(data);
+		mPayloadSize -= sizeof(data);
 		mReadPos += sizeof(data);
 
 		return *this;
@@ -756,6 +787,7 @@ namespace MyDataStruct
 
 		data = *(float*)(mReadPos);
 		mSize -= sizeof(data);
+		mPayloadSize -= sizeof(data);
 		mReadPos += sizeof(data);
 
 		return *this;
@@ -770,6 +802,7 @@ namespace MyDataStruct
 
 		data = *(double*)(mReadPos);
 		mSize -= sizeof(data);
+		mPayloadSize -= sizeof(data);
 		mReadPos += sizeof(data);
 
 		return *this;

@@ -75,6 +75,8 @@ namespace MyDataStruct
 		char* mReadPos;
 		char* mWritePos;
 		size_t mCapacity;
+		size_t mPayloadCapacity;
 		size_t mSize;
+		size_t mPayloadSize;
 	};
 }
