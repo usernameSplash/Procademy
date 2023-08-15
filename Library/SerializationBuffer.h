@@ -8,11 +8,6 @@ namespace MyDataStruct
 	class SPacket
 	{
 	public:
-		struct SPacketHeader
-		{
-			unsigned short len;
-		};
-
 		enum eBufferDefault
 		{
 			BUFFER_MINIMUM_SIZE = 64,
@@ -20,8 +15,8 @@ namespace MyDataStruct
 			BUFFER_MAX_SIZE = 4096,
 		};
 
-		SPacket(void);
-		SPacket(size_t capacity);
+		SPacket(size_t headerSize);
+		SPacket(size_t headerSize, size_t capacity);
 		SPacket(const SPacket& other);
 		virtual ~SPacket(void);
 
@@ -37,8 +32,8 @@ namespace MyDataStruct
 		size_t MoveReadPos(size_t size);
 		size_t MoveWritePos(size_t size);
 
-		void SetHeaderData(SPacketHeader header);
-		void GetHeaderData(SPacketHeader* outHeader);
+		void SetHeaderData(void* header);
+		void GetHeaderData(void* outHeader);
 
 	public:
 		SPacket& operator=(SPacket& rhs);
@@ -70,10 +65,13 @@ namespace MyDataStruct
 		SPacket& operator>>(double& data);
 
 	protected:
+
 		char* mBuffer;
 		char* mPayloadPtr;
 		char* mReadPos;
 		char* mWritePos;
+
+		size_t mHeaderSize;
 		size_t mCapacity;
 		size_t mPayloadCapacity;
 		size_t mSize;
