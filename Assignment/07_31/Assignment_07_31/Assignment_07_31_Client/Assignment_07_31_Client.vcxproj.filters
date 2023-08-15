@@ -18,13 +18,7 @@
     <ClCompile Include="main.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="Network.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
-    <ClCompile Include="Session.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
-    <ClCompile Include="Contents.cpp">
+    <ClCompile Include="EchoClient.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="SerializationBuffer.cpp">
@@ -32,13 +26,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Network.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="Session.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="Contents.h">
+    <ClInclude Include="EchoClient.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="SerializationBuffer.h">

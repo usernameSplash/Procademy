@@ -10,8 +10,6 @@
 
 #define SERVER_PORT 30000
 
-using namespace MyDataStruct;
-
 namespace NetworkLibrary
 {
 	class Network;
@@ -36,6 +34,9 @@ namespace NetworkLibrary
 		Network(IContents* contents);
 		~Network(void);
 
+		bool IsRunning(void);
+		void Shutdown(void);
+
 	private:
 		static unsigned int WINAPI AcceptProc(void* arg);
 		static unsigned int WINAPI WorkerProc(void* arg);
@@ -56,6 +57,7 @@ namespace NetworkLibrary
 
 	private:
 		bool _bShutdown;
+		bool _bRunning;
 
 		SOCKET _listenSocket;
 		SOCKADDR_IN _serverAddr;
@@ -68,5 +70,10 @@ namespace NetworkLibrary
 		size_t _sessionId;
 
 		IContents* _contents;
+	};
+
+	struct SPacketHeader
+	{
+		short len;
 	};
 }

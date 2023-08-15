@@ -13,6 +13,7 @@ namespace NetworkLibrary
 		WSADATA wsa;
 
 		_bShutdown = false;
+		_bRunning = false;
 
 		if (WSAStartup(MAKEWORD(2, 2), &wsa) != 0)
 		{
@@ -88,6 +89,7 @@ namespace NetworkLibrary
 		wprintf(L"# Create Worker Thread OK\n");
 
 		_contents->BindNetworkLibrary(this);
+		_bRunning = true;
 
 		wprintf(L"# Network Setup OK\n");
 
@@ -96,7 +98,39 @@ namespace NetworkLibrary
 
 	Network::~Network()
 	{
+	}
 
+	bool Network::IsRunning(void)
+	{
+		return _bRunning;
+	}
+
+	void Network::Shutdown(void)
+	{
+		_bShutdown = true;
+	
+		closesocket(_listenSocket);
+
+		while (!_sessionManager._sessionMap.empty())
+		{
+			auto iter = _sessionManager._sessionMap.begin();
+			Session* session = iter->second;
+			_sessionManager._sessionMap.erase(iter);
+			closesocket(session->_clientSocket);
+			delete(session);
+		}
+
+		WSACleanup();
+
+		for (int iCnt = 0; iCnt < 16; ++iCnt)
+		{
+			PostQueuedCompletionStatus(_iocp, 0, 0, 0);
+		}
+
+		WaitForMultipleObjects(16, _workerThreads, TRUE, INFINITE);
+		WaitForSingleObject(_acceptThread, INFINITE);
+		
+		_bRunning = false;
 	}
 
 	unsigned int WINAPI Network::AcceptProc(void* arg)
@@ -112,6 +146,8 @@ namespace NetworkLibrary
 		l.l_linger = 0;
 
 		int setSockOptRet;
+
+		wprintf(L"# Accept Thread Start\n");
 
 		while (!instance->_bShutdown)
 		{
@@ -149,8 +185,12 @@ namespace NetworkLibrary
 			instance->_sessionManager.Insert(instance->_sessionId, session);
 			ReleaseSRWLockExclusive(&instance->_sessionManager._lock);
 
+			instance->_sessionId++;
+
 			instance->RecvPost(session);
 		}
+
+		wprintf(L"# Accept Thread End\n");
 
 		return 0;
 	}
@@ -162,6 +202,7 @@ namespace NetworkLibrary
 
 		int gqcsRet;
 
+		wprintf(L"# Worker Thread Start\n");
 		while (1)
 		{
 			Session* session;
@@ -169,9 +210,21 @@ namespace NetworkLibrary
 			DWORD transferredByte;
 
 			gqcsRet = GetQueuedCompletionStatus(iocp, &transferredByte, (PULONG_PTR)&session, (LPOVERLAPPED*)&overlapped, INFINITE);
+			wprintf(L"# GQCS Called\n");
+
+			if (instance->_bShutdown)
+			{
+				break;
+			}
 
 			if (gqcsRet == 0 || transferredByte == 0)
 			{
+				if (gqcsRet != 0 && session != nullptr && overlapped != nullptr && overlapped->_type == eOverlappedType::SEND)
+				{
+					instance->SendPost(session);
+					continue;
+				}
+				
 				session->_bNoMoreIO = true;
 
 				if (gqcsRet == 0)
@@ -190,11 +243,7 @@ namespace NetworkLibrary
 			}
 			else if (overlapped->_type == eOverlappedType::RECV)
 			{
-				instance->SendPost(session);
-				if (!session->_bNoMoreIO)
-				{
-					instance->RecvPost(session);
-				}
+				instance->RecvHandler(session->_id, transferredByte);
 				continue;
 			}
 
@@ -203,6 +252,10 @@ namespace NetworkLibrary
 				instance->ReleaseSession(session);
 			}
 		}
+
+		wprintf(L"# Worker Thread End\n");
+
+		return 0;
 	}
 
 	void Network::ReleaseSession(Session* session)
@@ -239,9 +292,13 @@ namespace NetworkLibrary
 
 	void Network::SendPost(Session* session)
 	{
-		if (InterlockedIncrement(&session->_sendStatus) > 1)
+		if (session->_sendBuf.Size() == 0)
 		{
-			InterlockedDecrement(&session->_sendStatus);
+			return;
+		}
+
+		if (InterlockedExchange(&session->_sendStatus, 1) == 1)
+		{
 			return;
 		}
 		InterlockedIncrement(&session->_ioCount);
@@ -253,10 +310,17 @@ namespace NetworkLibrary
 		sendBytes = 0;
 		flag = 0;
 
+		if (session->_sendBuf.Size() == 0)
+		{
+			session->_sendStatus = 0;
+			PostQueuedCompletionStatus(_iocp, 0, (ULONG_PTR)session, (LPOVERLAPPED)&session->_sendOverlapped);
+			return;
+		}
+
 		session->_wsaSendBuf[0].buf = session->_sendBuf.GetFrontBufferPtr();
 		session->_wsaSendBuf[0].len = (ULONG)session->_sendBuf.DirectDequeueSize();
 		session->_wsaSendBuf[1].buf = session->_sendBuf.GetBufferPtr();
-		session->_wsaSendBuf[1].len = (ULONG)session->_sendBuf.Size() - session->_wsaSendBuf[1].len;
+		session->_wsaSendBuf[1].len = (ULONG)session->_sendBuf.Size() - session->_wsaSendBuf[0].len;
 
 		ZeroMemory(&session->_sendOverlapped, sizeof(OVERLAPPED));
 		sendRet = WSASend(session->_clientSocket, session->_wsaSendBuf, 2, &sendBytes, flag, &session->_sendOverlapped._obj, NULL);
@@ -271,10 +335,11 @@ namespace NetworkLibrary
 			}
 		}
 
-		if (session->_sendBuf.MoveFront(sendRet) != sendRet)
+		wprintf(L"# Send Data %d Bytes\n", sendBytes);
+
+		if (session->_sendBuf.MoveFront(sendBytes) != sendBytes)
 		{
 			wprintf(L"Send RingBuffer Error | Session Id :  %zu\n", session->_id);
-			_bShutdown = true;
 			return;
 		}
 
@@ -290,7 +355,7 @@ namespace NetworkLibrary
 		recvBytes = 0;
 		flag = 0;
 
-		size_t freeSize = session->_recvBuf.Capacity() - session->_recvBuf.DirectEnqueueSize();
+		size_t freeSize = session->_recvBuf.Capacity() - session->_recvBuf.Size();
 
 		session->_wsaRecvBuf[0].buf = session->_recvBuf.GetRearBufferPtr();
 		session->_wsaRecvBuf[0].len = (ULONG)session->_recvBuf.DirectEnqueueSize();
@@ -298,7 +363,6 @@ namespace NetworkLibrary
 		session->_wsaRecvBuf[1].len = (ULONG)freeSize - session->_wsaRecvBuf[0].len;
 
 		ZeroMemory(&session->_recvOverlapped._obj, sizeof(OVERLAPPED));
-
 		recvRet = WSARecv(session->_clientSocket, session->_wsaRecvBuf, 2, &recvBytes, &flag, &session->_recvOverlapped._obj, NULL);
 
 		if (recvRet == SOCKET_ERROR)
@@ -317,6 +381,7 @@ namespace NetworkLibrary
 
 	void Network::RecvHandler(const size_t sessionId, const DWORD byte)
 	{
+		wprintf(L"# RecvHandler Called\n");
 		AcquireSRWLockShared(&_sessionManager._lock);
 
 		auto iter = _sessionManager._sessionMap.find(sessionId);
@@ -332,8 +397,9 @@ namespace NetworkLibrary
 		AcquireSRWLockExclusive(&session->_lock);
 		ReleaseSRWLockShared(&_sessionManager._lock);
 
+		session->_recvBuf.MoveRear(byte);
+
 		RecvByteToMsg(session);
-		SendPost(session);
 
 		if(!session->_bNoMoreIO)
 		{
@@ -345,7 +411,7 @@ namespace NetworkLibrary
 
 	void Network::SendHandler(const size_t sessionId, const DWORD byte)
 	{
-		// to do
+		wprintf(L"# SendHandler Called\n");
 		AcquireSRWLockShared(&_sessionManager._lock);
 
 		auto iter = _sessionManager._sessionMap.find(sessionId);
@@ -378,8 +444,8 @@ namespace NetworkLibrary
 		{
 			size_t size = session->_recvBuf.Size();
 			
-			SPacket::SPacketHeader header;
-			SPacket packet;
+			SPacketHeader header;
+			SPacket packet(64);
 			
 			if (size < sizeof(header))
 			{
@@ -395,10 +461,10 @@ namespace NetworkLibrary
 
 			session->_recvBuf.Dequeue(sizeof(header));
 			session->_recvBuf.Peek(packet.GetPayloadPtr(), header.len);
+			session->_recvBuf.Dequeue(header.len);
 
-			packet.SetHeaderData(header);
-			packet.MoveReadPos(sizeof(header));
-			packet.MoveWritePos(sizeof(packet));
+			packet.SetHeaderData(&header);
+			packet.MoveWritePos(header.len);
 
 			_contents->OnMessage(session->_id, &packet);
 		}
@@ -419,11 +485,19 @@ namespace NetworkLibrary
 		Session* session = iter->second;
 		ReleaseSRWLockShared(&_sessionManager._lock);
 		
-		SPacket::SPacketHeader header;
-		header.len = packet->Size();
+		SPacketHeader header;
+		header.len = (short)packet->Size();
 
-		packet->SetHeaderData(header);
-		session->_sendBuf.Enqueue(packet->GetBufferPtr(), packet->Size());
+		packet->SetHeaderData(&header);
+		session->_sendBuf.Enqueue(packet->GetBufferPtr(), sizeof(SPacketHeader) + packet->Size());
+
+		if (session->_sendStatus == 0)
+		{
+			if (!session->_bNoMoreIO)
+			{
+				SendPost(session);
+			}
+		}
 	}
 
 	void IContents::BindNetworkLibrary(Network* instance)

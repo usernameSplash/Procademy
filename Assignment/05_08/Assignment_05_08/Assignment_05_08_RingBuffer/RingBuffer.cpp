@@ -92,35 +92,15 @@ namespace MyDataStructure
 		if (DIRECT_ENQUEUE_SIZE < size)
 		{
 			memcpy(mRear, srcData, DIRECT_ENQUEUE_SIZE);
-			//for (srcDataIdx = 0; srcDataIdx < DIRECT_ENQUEUE_SIZE; srcDataIdx++)
-			//{
-			//	*mRear = srcData[srcDataIdx];
-			//	mRear++;
-			//	result++;
-			//}
-
+			
 			mRear = mBuffer;
 			memcpy(mRear, srcData + DIRECT_ENQUEUE_SIZE, size - DIRECT_ENQUEUE_SIZE);
 			mRear = mBuffer + (size - DIRECT_ENQUEUE_SIZE);
-
-			//for (; srcDataIdx < size; srcDataIdx)
-			//{
-			//	*mRear = srcData[srcDataIdx];
-			//	mRear++;
-			//	result++;
-			//}
 		}
 		else
 		{
 			memcpy(mRear, srcData, size);
 			mRear = mRear + size;
-
-			//for (srcDataIdx = 0; srcDataIdx < size; srcDataIdx++)
-			//{
-			//	*mRear = srcData[srcDataIdx];
-			//	mRear++;
-			//	result++;
-			//}
 		}
 
 		result = size;
@@ -169,20 +149,10 @@ namespace MyDataStructure
 		if (DIRECT_DEQUEUE_SIZE < size)
 		{
 			memcpy(dstData, peekPtr, DIRECT_DEQUEUE_SIZE);
-			//for (dstDataIdx = 0; dstDataIdx < DIRECT_DEQUEUE_SIZE; dstDataIdx++)
-			//{
-			//	dstData[dstDataIdx] = *peekPtr;
-			//	peekPtr++;
-			//}
 
 			peekPtr = mBuffer;
 			
 			memcpy(dstData + DIRECT_DEQUEUE_SIZE, peekPtr, size - DIRECT_DEQUEUE_SIZE);
-			//for (; dstDataIdx < size; dstDataIdx++)
-			//{
-			//	dstData[dstDataIdx] = *peekPtr;
-			//	peekPtr++;
-			//}
 		}
 		else
 		{
@@ -225,6 +195,11 @@ namespace MyDataStructure
 	{
 		const size_t DIRECT_DEQUEUE_SIZE = DirectDequeueSize();
 
+		if (mSize < size)
+		{
+			size = mSize;
+		}
+
 		if (DIRECT_DEQUEUE_SIZE < size)
 		{
 			mFront = mBuffer + size - DIRECT_DEQUEUE_SIZE;
@@ -234,12 +209,19 @@ namespace MyDataStructure
 			mFront = mFront + size;
 		}
 
+		mSize -= size;
+
 		return size;
 	}
 
 	size_t RingBuffer::MoveRear(size_t size)
 	{
 		const size_t DIRECT_ENQUEUE_SIZE = DirectEnqueueSize();
+
+		if ((mCapacity - mSize) < size)
+		{
+			size = (mCapacity - mSize);
+		}
 
 		if (DIRECT_ENQUEUE_SIZE < size)
 		{
@@ -249,6 +231,8 @@ namespace MyDataStructure
 		{
 			mRear = mRear + size;
 		}
+
+		mSize += size;
 
 		return size;
 	}

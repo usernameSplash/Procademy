@@ -10,6 +10,7 @@ using namespace MyDataStruct;
 void Test0(void);
 void Test1(void);
 void Test2(void);
+void Test3(void);
 
 #define MY_SEED 3000
 
@@ -20,13 +21,16 @@ int main(void)
 	Test0();
 	Test1();
 	Test2();
+	Test3();
+
+	printf("Test Successs\n");
 
 	return 0;
 }
 
 void Test0(void)
 {
-	SPacket s;
+	SPacket s(0);
 
 	unsigned char a = 123;
 	unsigned short b = 65530;
@@ -49,7 +53,7 @@ void Test0(void)
 
 void Test1(void)
 {
-	SPacket s;
+	SPacket s(0);
 	std::vector<long long> v;
 	v.reserve(500);
 
@@ -360,7 +364,7 @@ void Test1(void)
 
 void Test2(void)
 {
-	SPacket s;
+	SPacket s(0);
 
 	short firstNum = -1;
 	for (size_t iCnt = 0; iCnt < 256; iCnt++)
@@ -383,4 +387,39 @@ void Test2(void)
 
 	printf("%d %d\n", firstNum, result);
 	assert(firstNum == result);
+}
+
+void Test3(void)
+{
+	SPacket s(2);
+
+
+	typedef struct SPacketHeader
+	{
+		short len;
+	};
+
+	SPacketHeader header;
+	header.len = 8;
+
+	int a = 4;
+	int b = 8;
+	int c = 12;
+	short d = 20;
+
+	s << a << b << c << d;
+	s.SetHeaderData(&header);
+
+	SPacketHeader outHeader;
+	int aa, bb, cc;
+	short dd;
+
+	s >> aa >> bb >> cc >> dd;
+	s.GetHeaderData(&outHeader);
+
+	assert(header.len == outHeader.len);
+	assert(a == aa);
+	assert(b == bb);
+	assert(c == cc);
+	assert(d == dd);
 }

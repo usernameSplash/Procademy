@@ -5,20 +5,22 @@
 
 namespace MyDataStruct
 {
-	SPacket::SPacket(void)
+	SPacket::SPacket(size_t headerSize)
 		: mBuffer(new char[BUFFER_DEFAULT_SIZE])
-		, mPayloadPtr(mBuffer + sizeof(SPacketHeader))
+		, mHeaderSize(headerSize)
+		, mPayloadPtr(mBuffer + headerSize)
 		, mReadPos(mPayloadPtr)
 		, mWritePos(mPayloadPtr)
 		, mCapacity(BUFFER_DEFAULT_SIZE)
-		, mPayloadCapacity(mCapacity - sizeof(SPacketHeader))
-		, mSize(sizeof(SPacketHeader))
+		, mPayloadCapacity(mCapacity - headerSize)
+		, mSize(headerSize)
 		, mPayloadSize(0)
 	{
 	}
 
-	SPacket::SPacket(size_t capacity)
-		: mSize(sizeof(SPacketHeader))
+	SPacket::SPacket(size_t headerSize, size_t capacity)
+		: mHeaderSize(headerSize)
+		, mSize(headerSize)
 		, mPayloadSize(0)
 	{
 		if (capacity < BUFFER_MINIMUM_SIZE)
@@ -31,18 +33,19 @@ namespace MyDataStruct
 		}
 
 		mBuffer = new char[capacity];
-		mPayloadPtr = mBuffer + sizeof(SPacketHeader);
+		mPayloadPtr = mBuffer + headerSize;
 		mReadPos = mPayloadPtr;
 		mWritePos = mPayloadPtr;
 		mCapacity = capacity;
-		mPayloadCapacity = capacity - sizeof(SPacketHeader);
+		mPayloadCapacity = capacity - headerSize;
 	}
 
 	SPacket::SPacket(const SPacket& other)
 		: mBuffer(new char[other.mCapacity])
-		, mPayloadPtr(mBuffer + sizeof(SPacketHeader))
+		, mPayloadPtr(mBuffer + other.mHeaderSize)
 		, mReadPos(mPayloadPtr)
 		, mWritePos(mPayloadPtr + other.mSize)
+		, mHeaderSize(other.mHeaderSize)
 		, mCapacity(other.mCapacity)
 		, mPayloadCapacity(other.mPayloadCapacity)
 		, mSize(other.mSize)
@@ -59,18 +62,19 @@ namespace MyDataStruct
 
 	void SPacket::Clear(void)
 	{
-		mSize = 0;
+		mSize = mHeaderSize;
+		mPayloadSize = 0;
 		return;
 	}
 
 	size_t SPacket::Capacity(void)
 	{
-		return mCapacity;
+		return mPayloadCapacity;
 	}
 
 	size_t SPacket::Size(void)
 	{
-		return mSize;
+		return mPayloadSize;
 	}
 
 	void SPacket::Reserve(size_t capacity)
@@ -90,12 +94,12 @@ namespace MyDataStruct
 		memcpy(newBuffer, mBuffer, mSize);
 
 		mCapacity = capacity;
-		mPayloadCapacity = capacity - sizeof(SPacketHeader);
+		mPayloadCapacity = capacity - mHeaderSize;
 		
 		delete mBuffer;
 
 		mBuffer = newBuffer;
-		mPayloadPtr = mBuffer + sizeof(SPacketHeader);
+		mPayloadPtr = mBuffer + mHeaderSize;
 		mReadPos = mPayloadPtr;
 		mWritePos = mPayloadPtr + mSize;
 
@@ -140,14 +144,14 @@ namespace MyDataStruct
 		return size;
 	}
 
-	void SPacket::SetHeaderData(SPacketHeader header)
+	void SPacket::SetHeaderData(void* header)
 	{
-		memcpy(mBuffer, &header, sizeof(SPacketHeader));
+		memcpy(mBuffer, header, mHeaderSize);
 	}
 
-	void SPacket::GetHeaderData(SPacketHeader* outHeader)
+	void SPacket::GetHeaderData(void* outHeader)
 	{
-		memcpy(outHeader, mBuffer, sizeof(SPacketHeader));
+		memcpy(outHeader, mBuffer, mHeaderSize);
 	}
 
 	SPacket& SPacket::operator=(SPacket& rhs)
@@ -157,7 +161,7 @@ namespace MyDataStruct
 			delete mBuffer;
 
 			mBuffer = new char[rhs.mCapacity];
-			mPayloadPtr = mBuffer + sizeof(SPacketHeader);
+			mPayloadPtr = mBuffer + mHeaderSize;
 			mReadPos = mPayloadPtr;
 			mWritePos = mPayloadPtr;
 			mCapacity = rhs.mCapacity;
@@ -189,13 +193,13 @@ namespace MyDataStruct
 				return *this;
 			}
 
-			if ((mCapacity - sizeof(SPacketHeader)) * 2 > BUFFER_MAX_SIZE)
+			if ((mCapacity - mHeaderSize) * 2 > BUFFER_MAX_SIZE)
 			{
 				Reserve(BUFFER_MAX_SIZE);
 			}
 			else
 			{
-				Reserve((mCapacity - sizeof(SPacketHeader)) * 2);
+				Reserve((mCapacity - mHeaderSize) * 2);
 			}
 		}
 
@@ -227,13 +231,13 @@ namespace MyDataStruct
 				return *this;
 			}
 
-			if ((mCapacity - sizeof(SPacketHeader)) * 2 > BUFFER_MAX_SIZE)
+			if ((mCapacity - mHeaderSize) * 2 > BUFFER_MAX_SIZE)
 			{
 				Reserve(BUFFER_MAX_SIZE);
 			}
 			else
 			{
-				Reserve((mCapacity - sizeof(SPacketHeader)) * 2);
+				Reserve((mCapacity - mHeaderSize) * 2);
 			}
 		}
 
@@ -265,13 +269,13 @@ namespace MyDataStruct
 				return *this;
 			}
 
-			if ((mCapacity - sizeof(SPacketHeader)) * 2 > BUFFER_MAX_SIZE)
+			if ((mCapacity - mHeaderSize) * 2 > BUFFER_MAX_SIZE)
 			{
 				Reserve(BUFFER_MAX_SIZE);
 			}
 			else
 			{
-				Reserve((mCapacity - sizeof(SPacketHeader)) * 2);
+				Reserve((mCapacity - mHeaderSize) * 2);
 			}
 		}
 
@@ -303,13 +307,13 @@ namespace MyDataStruct
 				return *this;
 			}
 
-			if ((mCapacity - sizeof(SPacketHeader)) * 2 > BUFFER_MAX_SIZE)
+			if ((mCapacity - mHeaderSize) * 2 > BUFFER_MAX_SIZE)
 			{
 				Reserve(BUFFER_MAX_SIZE);
 			}
 			else
 			{
-				Reserve((mCapacity - sizeof(SPacketHeader)) * 2);
+				Reserve((mCapacity - mHeaderSize) * 2);
 			}
 		}
 
@@ -341,13 +345,13 @@ namespace MyDataStruct
 				return *this;
 			}
 
-			if ((mCapacity - sizeof(SPacketHeader)) * 2 > BUFFER_MAX_SIZE)
+			if ((mCapacity - mHeaderSize) * 2 > BUFFER_MAX_SIZE)
 			{
 				Reserve(BUFFER_MAX_SIZE);
 			}
 			else
 			{
-				Reserve((mCapacity - sizeof(SPacketHeader)) * 2);
+				Reserve((mCapacity - mHeaderSize) * 2);
 			}
 		}
 
@@ -379,13 +383,13 @@ namespace MyDataStruct
 				return *this;
 			}
 
-			if ((mCapacity - sizeof(SPacketHeader)) * 2 > BUFFER_MAX_SIZE)
+			if ((mCapacity - mHeaderSize) * 2 > BUFFER_MAX_SIZE)
 			{
 				Reserve(BUFFER_MAX_SIZE);
 			}
 			else
 			{
-				Reserve((mCapacity - sizeof(SPacketHeader)) * 2);
+				Reserve((mCapacity - mHeaderSize) * 2);
 			}
 		}
 
@@ -417,13 +421,13 @@ namespace MyDataStruct
 				return *this;
 			}
 
-			if ((mCapacity - sizeof(SPacketHeader)) * 2 > BUFFER_MAX_SIZE)
+			if ((mCapacity - mHeaderSize) * 2 > BUFFER_MAX_SIZE)
 			{
 				Reserve(BUFFER_MAX_SIZE);
 			}
 			else
 			{
-				Reserve((mCapacity - sizeof(SPacketHeader)) * 2);
+				Reserve((mCapacity - mHeaderSize) * 2);
 			}
 		}
 
@@ -455,13 +459,13 @@ namespace MyDataStruct
 				return *this;
 			}
 
-			if ((mCapacity - sizeof(SPacketHeader)) * 2 > BUFFER_MAX_SIZE)
+			if ((mCapacity - mHeaderSize) * 2 > BUFFER_MAX_SIZE)
 			{
 				Reserve(BUFFER_MAX_SIZE);
 			}
 			else
 			{
-				Reserve((mCapacity - sizeof(SPacketHeader)) * 2);
+				Reserve((mCapacity - mHeaderSize) * 2);
 			}
 		}
 
@@ -493,13 +497,13 @@ namespace MyDataStruct
 				return *this;
 			}
 
-			if ((mCapacity - sizeof(SPacketHeader)) * 2 > BUFFER_MAX_SIZE)
+			if ((mCapacity - mHeaderSize) * 2 > BUFFER_MAX_SIZE)
 			{
 				Reserve(BUFFER_MAX_SIZE);
 			}
 			else
 			{
-				Reserve((mCapacity - sizeof(SPacketHeader)) * 2);
+				Reserve((mCapacity - mHeaderSize) * 2);
 			}
 		}
 
@@ -531,13 +535,13 @@ namespace MyDataStruct
 				return *this;
 			}
 
-			if ((mCapacity - sizeof(SPacketHeader)) * 2 > BUFFER_MAX_SIZE)
+			if ((mCapacity - mHeaderSize) * 2 > BUFFER_MAX_SIZE)
 			{
 				Reserve(BUFFER_MAX_SIZE);
 			}
 			else
 			{
-				Reserve((mCapacity - sizeof(SPacketHeader)) * 2);
+				Reserve((mCapacity - mHeaderSize) * 2);
 			}
 		}
 
@@ -569,13 +573,13 @@ namespace MyDataStruct
 				return *this;
 			}
 
-			if ((mCapacity - sizeof(SPacketHeader)) * 2 > BUFFER_MAX_SIZE)
+			if ((mCapacity - mHeaderSize) * 2 > BUFFER_MAX_SIZE)
 			{
 				Reserve(BUFFER_MAX_SIZE);
 			}
 			else
 			{
-				Reserve((mCapacity - sizeof(SPacketHeader)) * 2);
+				Reserve((mCapacity - mHeaderSize) * 2);
 			}
 		}
 
@@ -607,13 +611,13 @@ namespace MyDataStruct
 				return *this;
 			}
 
-			if ((mCapacity - sizeof(SPacketHeader)) * 2 > BUFFER_MAX_SIZE)
+			if ((mCapacity - mHeaderSize) * 2 > BUFFER_MAX_SIZE)
 			{
 				Reserve(BUFFER_MAX_SIZE);
 			}
 			else
 			{
-				Reserve((mCapacity - sizeof(SPacketHeader)) * 2);
+				Reserve((mCapacity - mHeaderSize) * 2);
 			}
 		}
 
