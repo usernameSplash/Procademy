@@ -13,45 +13,66 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Contents">
+      <UniqueIdentifier>{622fc0f3-d0d9-48c0-8a8e-3c391936b88f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Network">
+      <UniqueIdentifier>{fe0d3d3f-38de-43a5-a68a-047b942f84b1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Util">
+      <UniqueIdentifier>{09b6dec0-4698-4945-a9dd-68bbfc272763}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="IServer.cpp">
-      <Filter>소스 파일</Filter>
+    <ClCompile Include="Player.cpp">
+      <Filter>Contents</Filter>
     </ClCompile>
-    <ClCompile Include="SerializationBuffer.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
-    <ClCompile Include="Session.cpp">
-      <Filter>소스 파일</Filter>
+    <ClCompile Include="Region.cpp">
+      <Filter>Contents</Filter>
     </ClCompile>
     <ClCompile Include="RingBuffer.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Util</Filter>
+    </ClCompile>
+    <ClCompile Include="SerializationBuffer.cpp">
+      <Filter>Util</Filter>
+    </ClCompile>
+    <ClCompile Include="IServer.cpp">
+      <Filter>Network</Filter>
+    </ClCompile>
+    <ClCompile Include="Session.cpp">
+      <Filter>Network</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="IServer.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="Session.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="SerializationBuffer.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="Protocol.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
     <ClInclude Include="main.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="ObjectPool.h">
-      <Filter>헤더 파일</Filter>
+    <ClInclude Include="Player.h">
+      <Filter>Contents</Filter>
+    </ClInclude>
+    <ClInclude Include="Region.h">
+      <Filter>Contents</Filter>
     </ClInclude>
     <ClInclude Include="RingBuffer.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Util</Filter>
+    </ClInclude>
+    <ClInclude Include="SerializationBuffer.h">
+      <Filter>Util</Filter>
+    </ClInclude>
+    <ClInclude Include="ObjectPool.h">
+      <Filter>Util</Filter>
+    </ClInclude>
+    <ClInclude Include="IServer.h">
+      <Filter>Network</Filter>
+    </ClInclude>
+    <ClInclude Include="Protocol.h">
+      <Filter>Network</Filter>
+    </ClInclude>
+    <ClInclude Include="Session.h">
+      <Filter>Network</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
