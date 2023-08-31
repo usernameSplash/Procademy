@@ -28,8 +28,8 @@ namespace MyDataStructure
 
     private:
         char* mBuffer;
-        char* mFront;
-        char* mRear;
+        int mFront;
+        int mRear;
 
         size_t mCapacity;
         size_t mSize;

@@ -7,8 +7,8 @@ namespace MyDataStructure
 {
 	RingBuffer::RingBuffer(void)
 		: mBuffer(new char[CAPACITY])
-		, mFront(mBuffer)
-		, mRear(mBuffer)
+		, mFront(0)
+		, mRear(0)
 		, mCapacity(CAPACITY)
 		, mSize(0)
 	{
@@ -16,8 +16,8 @@ namespace MyDataStructure
 
 	RingBuffer::RingBuffer(size_t capacity)
 		: mBuffer(new char[capacity])
-		, mFront(mBuffer)
-		, mRear(mBuffer)
+		, mFront(0)
+		, mRear(0)
 		, mCapacity(capacity)
 		, mSize(0)
 	{
@@ -26,7 +26,6 @@ namespace MyDataStructure
 	void RingBuffer::Reserve(size_t capacity)
 	{
 		char* newBuffer;
-		size_t frontPos;
 
 		if (mCapacity >= capacity)
 		{
@@ -39,12 +38,8 @@ namespace MyDataStructure
 			newBuffer[iCnt] = mBuffer[iCnt];
 		}
 
-		frontPos = mFront - mBuffer;
-
 		delete[] mBuffer;
 		mBuffer = newBuffer;
-		mFront = mBuffer + frontPos;
-		mRear = mFront + mSize;
 
 		mCapacity = capacity;
 	}
@@ -91,20 +86,17 @@ namespace MyDataStructure
 
 		if (DIRECT_ENQUEUE_SIZE < size)
 		{
-			memcpy(mRear, srcData, DIRECT_ENQUEUE_SIZE);
-			
-			mRear = mBuffer;
-			memcpy(mRear, srcData + DIRECT_ENQUEUE_SIZE, size - DIRECT_ENQUEUE_SIZE);
-			mRear = mBuffer + (size - DIRECT_ENQUEUE_SIZE);
+			memcpy((mBuffer + mRear), srcData, DIRECT_ENQUEUE_SIZE);
+			memcpy(mBuffer, srcData + DIRECT_ENQUEUE_SIZE, size - DIRECT_ENQUEUE_SIZE);
 		}
 		else
 		{
-			memcpy(mRear, srcData, size);
-			mRear = mRear + size;
+			memcpy(mBuffer + mRear, srcData, size);
 		}
 
 		result = size;
 		mSize += result;
+		mRear = (mRear + size) % mCapacity;
 
 		return result;
 	}
@@ -119,15 +111,7 @@ namespace MyDataStructure
 			size = mSize;
 		}
 
-		if (DIRECT_DEQUEUE_SIZE < size)
-		{
-			mFront = mBuffer + (size - DIRECT_DEQUEUE_SIZE);
-		}
-		else
-		{
-			mFront = mFront + size;
-		}
-
+		mFront = (mFront + size) % mCapacity;
 		mSize -= size;
 
 		return size;
@@ -139,7 +123,7 @@ namespace MyDataStructure
 		size_t result = 0;
 		//size_t dstDataIdx;
 
-		char* peekPtr = mFront;
+		char* peekPtr = mBuffer + mFront;
 
 		if (mSize < size)
 		{
@@ -166,48 +150,43 @@ namespace MyDataStructure
 
 	size_t RingBuffer::DirectEnqueueSize(void)
 	{
-		if (mRear < mFront)
+		if (mRear >= mFront)
+		{
+			return mCapacity - mRear;
+		}
+		else
 		{
 			return mFront - mRear;
 		}
-
-		return mBuffer + mCapacity - mRear;
 	}
 
 	size_t RingBuffer::DirectDequeueSize(void)
 	{
-		if (mRear < mFront)
+		if (mRear >= mFront)
 		{
-			return mBuffer + mCapacity - mFront;
+			return mRear - mFront;
 		}
-
-		return mRear - mFront;
+		else
+		{
+			return mCapacity - mFront;
+		}
 	}
 
 	void RingBuffer::ClearBuffer(void)
 	{
-		mFront = mBuffer;
-		mRear = mBuffer;
+		mFront = 0;
+		mRear = 0;
 		mSize = 0;
 	}
 
 	size_t RingBuffer::MoveFront(size_t size)
 	{
-		const size_t DIRECT_DEQUEUE_SIZE = DirectDequeueSize();
-
 		if (mSize < size)
 		{
 			size = mSize;
 		}
 
-		if (DIRECT_DEQUEUE_SIZE < size)
-		{
-			mFront = mBuffer + size - DIRECT_DEQUEUE_SIZE;
-		}
-		else
-		{
-			mFront = mFront + size;
-		}
+		mFront = (mFront + size) % mCapacity;
 
 		mSize -= size;
 
@@ -216,21 +195,12 @@ namespace MyDataStructure
 
 	size_t RingBuffer::MoveRear(size_t size)
 	{
-		const size_t DIRECT_ENQUEUE_SIZE = DirectEnqueueSize();
-
 		if ((mCapacity - mSize) < size)
 		{
 			size = (mCapacity - mSize);
 		}
 
-		if (DIRECT_ENQUEUE_SIZE < size)
-		{
-			mRear = mBuffer + size - DIRECT_ENQUEUE_SIZE;
-		}
-		else
-		{
-			mRear = mRear + size;
-		}
+		mRear = (mRear + size) % mCapacity;
 
 		mSize += size;
 
@@ -244,11 +214,11 @@ namespace MyDataStructure
 
 	char* RingBuffer::GetFrontBufferPtr(void)
 	{
-		return mFront;
+		return mBuffer + mFront;
 	}
 
 	char* RingBuffer::GetRearBufferPtr(void)
 	{
-		return mRear;
+		return mBuffer + mRear;
 	}
 }
