@@ -4,6 +4,7 @@
 #include <unordered_map>
 
 #include "RingBuffer.h"
+#include "SerializationBuffer.h"
 
 using SessionID = __int64;
 
@@ -28,7 +29,6 @@ namespace TCPFighter_IOCP_Server
 	{
 	public:
 		Session();
-		Session(const size_t id, const SOCKET socket, const SOCKADDR_IN addr);
 
 	public:
 		void Initialize(const size_t id, const SOCKET socket, const SOCKADDR_IN addr);
@@ -46,6 +46,9 @@ namespace TCPFighter_IOCP_Server
 		WSABUF _wsaSendBuf[2];
 		WSABUF _wsaRecvBuf[2];
 
+		SPacket _sendPacket;
+		SPacket _recvPacket;
+
 		SRWLOCK _lock;
 		long _ioCount;
 		long _sendStatus;
@@ -58,8 +61,5 @@ namespace TCPFighter_IOCP_Server
 	{
 	public:
 		SessionManager();
-
-	public:
-		SRWLOCK _lock;
 	};
 }

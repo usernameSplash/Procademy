@@ -52,6 +52,8 @@ SPacket::~SPacket(void)
 void SPacket::Clear(void)
 {
 	mSize = sizeof(SPacketHeader);
+	mReadPos = mPayloadPtr;
+	mWritePos = mPayloadPtr;
 	return;
 }
 

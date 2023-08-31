@@ -4,7 +4,9 @@
 #include <WinSock2.h>
 #include <WS2tcpip.h>
 #include <process.h>
+#include <vector>
 
+#include "ObjectPool.h"
 #include "SerializationBuffer.h"
 #include "Session.h"
 
@@ -97,6 +99,11 @@ namespace TCPFighter_IOCP_Server
 		int _maxSession;
 
 		SessionManager _sessionManager;
+		ObjectPool<Session>* _sessionPool;
+		
+		vector<SessionID> _returnedIds;
+		int _returnedIdCnt;
+		SRWLOCK _returnedIdListLock;
 
 	private:
 		// Server State

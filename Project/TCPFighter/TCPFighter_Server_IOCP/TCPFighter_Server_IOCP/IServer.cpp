@@ -117,6 +117,17 @@ namespace TCPFighter_IOCP_Server
 			}
 		}
 
+		_sessionPool = new ObjectPool<Session>(SESSION_MAX);
+		_sessionManager.reserve(10000);
+		for (int sessionCnt = 0; sessionCnt < SESSION_MAX; ++sessionCnt)
+		{
+			_sessionManager.insert(make_pair(sessionCnt, nullptr));
+		}
+
+		_returnedIds.reserve(SESSION_MAX);
+		InitializeSRWLock(&_returnedIdListLock);
+		_returnedIdCnt = 0;
+
 		wprintf(L"# Network Server Setup Success\n");
 
 		return true;
@@ -151,10 +162,13 @@ namespace TCPFighter_IOCP_Server
 		for (auto iter = _sessionManager.begin(); iter != _sessionManager.end(); ++iter)
 		{
 			Session* session = iter->second;
-			closesocket(session->_clientSocket);
+			if (session == nullptr)
+			{
+				continue;
+			}
 
-			delete session;
-			// TODO : Use ObjectPool instead of New/Delete
+			closesocket(session->_clientSocket);
+			_sessionPool->Free(session);
 		}
 
 		// Close All Kernel Objects
@@ -171,6 +185,7 @@ namespace TCPFighter_IOCP_Server
 		}
 
 		delete[] _workerThreads;
+		delete _sessionPool;
 
 		wprintf(L"# Server Shutdown Complete\n");
 
@@ -179,20 +194,15 @@ namespace TCPFighter_IOCP_Server
 
 	bool IServer::Disconnect(const SessionID sessionId)
 	{
-		AcquireSRWLockShared(&_sessionManager._lock);
+		Session* session = _sessionManager[sessionId];
 		
-		auto iter = _sessionManager.find(sessionId);
-		if (iter == _sessionManager.end())
+		if (session == nullptr)
 		{
-			ReleaseSRWLockShared(&_sessionManager._lock);
-			return false;
+			return;
 		}
 
-		Session* session = iter->second;
-		
 		AcquireSRWLockShared(&session->_lock);
-		ReleaseSRWLockShared(&_sessionManager._lock);
-
+		
 		// Make Session's ioCount to Zero By 2 times of PQCS Call.
 		session->_bConnected = false;
 		PostQueuedCompletionStatus(_networkIOCP, 0, (ULONG_PTR)session, 0);
@@ -205,19 +215,14 @@ namespace TCPFighter_IOCP_Server
 
 	bool IServer::SendPacket(const SessionID sessionId, SPacket* packet)
 	{
-		AcquireSRWLockShared(&_sessionManager._lock);
+		Session* session = _sessionManager[sessionId];
 
-		auto iter = _sessionManager.find(sessionId);
-		if (iter == _sessionManager.end())
+		if (session == nullptr)
 		{
-			ReleaseSRWLockShared(&_sessionManager._lock);
-			return false;
+			return;
 		}
-
-		Session* session = iter->second;
 		
 		AcquireSRWLockShared(&session->_lock);
-		ReleaseSRWLockShared(&_sessionManager._lock);
 
 		SPacketHeader header;
 		header.len = static_cast<short>(packet->Size());
@@ -256,11 +261,12 @@ namespace TCPFighter_IOCP_Server
 
 		wprintf(L"# Accept Proc Start\n");
 
+		int addrLen = sizeof(SOCKADDR_IN);
+
 		while (true)
 		{
 			SOCKET clientSocket;
 			SOCKADDR_IN clientAddr;
-			int addrLen = sizeof(clientAddr);
 
 			clientSocket = accept(instance->_listenSocket, (SOCKADDR*)&clientAddr, &addrLen);
 
@@ -274,6 +280,17 @@ namespace TCPFighter_IOCP_Server
 			if (!g_bRunning || !instance->_bRunning)
 			{
 				break;
+			}
+
+			if (sessionIdProvider >= SESSION_MAX)
+			{
+				if (instance->_returnedIdCnt == 0)
+				{
+					closesocket(clientSocket);
+					int temp = 0;
+					WaitOnAddress(&instance->_returnedIdCnt, &temp, sizeof(instance->_returnedIdCnt), INFINITE);
+					continue;
+				}
 			}
 
 #pragma region validate_connection			
@@ -290,13 +307,26 @@ namespace TCPFighter_IOCP_Server
 			}
 #pragma endregion
 
-			Session* session = new Session(sessionIdProvider, clientSocket, clientAddr);
-			++sessionIdProvider;
-			// TODO : Use ObjectPool instead of New/Delete
+			SessionID newId;
+			if (sessionIdProvider >= SESSION_MAX)
+			{
+				AcquireSRWLockExclusive(&instance->_returnedIdListLock);
+				newId = instance->_returnedIds.back();
+				instance->_returnedIds.pop_back();
+				instance->_returnedIdCnt--;
+				ReleaseSRWLockExclusive(&instance->_returnedIdListLock);
+			}
+			else
+			{
+				newId = sessionIdProvider++;
+			}
 
-			AcquireSRWLockExclusive(&instance->_sessionManager._lock);
-			instance->_sessionManager.insert(make_pair(session->_id, session));
-			ReleaseSRWLockExclusive(&instance->_sessionManager._lock);
+			Session* session = instance->_sessionPool->Alloc();
+			session->Initialize(newId, clientSocket, clientAddr);
+
+			//AcquireSRWLockExclusive(&instance->_sessionManager._lock);
+			instance->_sessionManager[sessionIdProvider] = session;
+			//ReleaseSRWLockExclusive(&instance->_sessionManager._lock);
 
 			InterlockedIncrement(&instance->_sessionCnt);
 			++instance->_acceptCnt;
@@ -387,28 +417,25 @@ namespace TCPFighter_IOCP_Server
 				break;
 			}
 
-			AcquireSRWLockExclusive(&instance->_sessionManager._lock);
-			
-			auto iter = instance->_sessionManager.find(session->_id);
-			if (iter == instance->_sessionManager.end())
-			{
-				ReleaseSRWLockExclusive(&instance->_sessionManager._lock);
-				continue;
-			}
-			instance->_sessionManager.erase(iter);
-
-			ReleaseSRWLockExclusive(&instance->_sessionManager._lock);
+			SessionID releaseId = session->_id;
+			instance->_sessionManager[releaseId] = nullptr;
 
 			AcquireSRWLockExclusive(&session->_lock);
 			ReleaseSRWLockExclusive(&session->_lock);
 
 			closesocket(session->_clientSocket);
-			SessionID clientId = session->_id;
-			delete session;
-			// TODO : Use ObjectPool instead of New/Delete
 
+			SessionID clientId = session->_id;
+			instance->_sessionPool->Free(session);
 			instance->_disconnectCnt++;
+
 			InterlockedDecrement(&instance->_sessionCnt);
+
+			AcquireSRWLockExclusive(&instance->_returnedIdListLock);
+			instance->_returnedIds.push_back(clientId);
+			instance->_returnedIdCnt++;
+			ReleaseSRWLockExclusive(&instance->_returnedIdListLock);
+			WakeByAddressSingle(&instance->_returnedIdCnt);
 
 			instance->OnClientLeave(clientId);
 		}
