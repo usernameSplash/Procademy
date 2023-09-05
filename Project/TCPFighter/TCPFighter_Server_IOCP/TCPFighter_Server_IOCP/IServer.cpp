@@ -22,7 +22,8 @@ namespace TCPFighter_IOCP_Server
 			return false;
 		}
 
-		int setSockOptRet;
+		int nagleOptSetRet;
+		int sendBufSizeSetRet;
 		int bindRet;
 		int listenRet;
 
@@ -47,10 +48,21 @@ namespace TCPFighter_IOCP_Server
 			l.l_onoff = 1;
 			l.l_linger = 0;
 
-			setSockOptRet = setsockopt(_listenSocket, SOL_SOCKET, SO_LINGER, (char*)&l, sizeof(l));
-			if (setSockOptRet == SOCKET_ERROR)
+			nagleOptSetRet = setsockopt(_listenSocket, SOL_SOCKET, SO_LINGER, (char*)&l, sizeof(l));
+			if (nagleOptSetRet == SOCKET_ERROR)
 			{
 				wprintf(L"# Nagle Option Setting Failed\n");
+				return false;
+			}
+		}
+
+		{
+			int sendBufSize = 0;
+
+			sendBufSizeSetRet = setsockopt(_listenSocket, SOL_SOCKET, SO_SNDBUF, (char*)&sendBufSize, sizeof(sendBufSize));
+			if (nagleOptSetRet == SOCKET_ERROR)
+			{
+				wprintf(L"# Socket Send Buffer Size Setting Failed\n");
 				return false;
 			}
 		}
@@ -118,6 +130,8 @@ namespace TCPFighter_IOCP_Server
 		}
 
 		_sessionPool = new ObjectPool<Session>(SESSION_MAX);
+		_sendPacketPool = new ObjectPool<SPacket>(PAKCET_POOL_SIZE);
+
 		_sessionManager.reserve(10000);
 		for (int sessionCnt = 0; sessionCnt < SESSION_MAX; ++sessionCnt)
 		{
@@ -228,7 +242,8 @@ namespace TCPFighter_IOCP_Server
 		header.len = static_cast<short>(packet->Size());
 		packet->SetHeaderData(&header);
 
-		session->_sendBuf.Enqueue(packet->GetBufferPtr(), sizeof(SPacketHeader) + header.len);
+		session->_sendBuf.Enqueue((char*)&packet, sizeof(SPacket*));		// Enqueue Address Value (SPacket* Type)
+		session->_sendPacketCnt++;
 
 		SendPost(session);
 
@@ -445,7 +460,7 @@ namespace TCPFighter_IOCP_Server
 
 	void IServer::RecvPost(Session* session)
 	{
-		if (!session->_bConnected || session->_bNoMoreIO)
+		if (!session->_bConnected)
 		{
 			return;
 		}
@@ -459,13 +474,15 @@ namespace TCPFighter_IOCP_Server
 
 		size_t freeSize = session->_recvBuf.Capacity() - session->_recvBuf.Size();
 
-		session->_wsaRecvBuf[0].buf = session->_recvBuf.GetRearBufferPtr();
-		session->_wsaRecvBuf[0].len = (ULONG)session->_recvBuf.DirectEnqueueSize();
-		session->_wsaRecvBuf[1].buf = session->_recvBuf.GetBufferPtr();
-		session->_wsaRecvBuf[1].len = (ULONG)freeSize - session->_wsaRecvBuf[0].len;
+		WSABUF wsaRecvBuf[2];
+
+		wsaRecvBuf[0].buf = session->_recvBuf.GetRearBufferPtr();
+		wsaRecvBuf[0].len = (ULONG)session->_recvBuf.DirectEnqueueSize();
+		wsaRecvBuf[1].buf = session->_recvBuf.GetBufferPtr();
+		wsaRecvBuf[1].len = (ULONG)freeSize - wsaRecvBuf[0].len;
 
 		ZeroMemory(&session->_recvOverlapped._obj, sizeof(OVERLAPPED));
-		recvRet = WSARecv(session->_clientSocket, session->_wsaRecvBuf, 2, &recvBytes, &flag, &session->_recvOverlapped._obj, NULL);
+		recvRet = WSARecv(session->_clientSocket, wsaRecvBuf, 2, &recvBytes, &flag, &session->_recvOverlapped._obj, NULL);
 
 		if (recvRet == SOCKET_ERROR)
 		{
@@ -488,12 +505,12 @@ namespace TCPFighter_IOCP_Server
 
 	void IServer::SendPost(Session* session)
 	{
-		if (!session->_bConnected || session->_bNoMoreIO)
+		if (!session->_bConnected)
 		{
 			return;
 		}
 
-		if (session->_sendBuf.Size() == 0)
+		if (session->_sendPacketCnt == 0)
 		{
 			return;
 		}
@@ -502,29 +519,47 @@ namespace TCPFighter_IOCP_Server
 		{
 			return;
 		}
+
 		InterlockedIncrement(&session->_ioCount);
 
-		if (session->_sendBuf.Size() == 0)
+		if (session->_sendPacketCnt == 0)
 		{
 			session->_sendStatus = 0;
 			PostQueuedCompletionStatus(_networkIOCP, 0, (ULONG_PTR)session, (LPOVERLAPPED)&session->_sendOverlapped);
 			return;
 		}
 
+		session->_sendPacketLen = session->_sendPacketCnt;
+		session->_sendPacketCnt = 0;
+
 		DWORD flag;
 		DWORD sendBytes;
 		int sendRet;
 
 		flag = 0;
-		sendBytes = 0;
 
-		session->_wsaSendBuf[0].buf = session->_sendBuf.GetFrontBufferPtr();
-		session->_wsaSendBuf[0].len = (ULONG)session->_sendBuf.DirectDequeueSize();
-		session->_wsaSendBuf[1].buf = session->_sendBuf.GetBufferPtr();
-		session->_wsaSendBuf[1].len = (ULONG)session->_sendBuf.Size() - session->_wsaSendBuf[0].len;
+		if (WSA_SEND_BUF_LEN_MAX < session->_sendPacketLen)
+		{
+			wprintf(L"# Error : Send Packet is Too Many\n");
+			Disconnect(session->_id);
+		}
+
+		WSABUF sendWSABuf[WSA_SEND_BUF_LEN_MAX];
+		SPacket* packets[WSA_SEND_BUF_LEN_MAX];
+
+		session->_sendBuf.Peek((char*)packets, session->_sendBuf.Size());
+
+		for (int packetCnt = 0; packetCnt < session->_sendPacketLen; ++packetCnt)
+		{
+			SPacketHeader header;
+			packets[packetCnt]->GetHeaderData(&header);
+
+			sendWSABuf[packetCnt].buf = packets[packetCnt]->GetBufferPtr();
+			sendWSABuf[packetCnt].len = sizeof(SPacketHeader) + header.len;
+		}
 
 		ZeroMemory(&session->_sendOverlapped, sizeof(OVERLAPPED));
-		sendRet = WSASend(session->_clientSocket, session->_wsaSendBuf, 2, &sendBytes, flag, &session->_sendOverlapped._obj, NULL);
+		sendRet = WSASend(session->_clientSocket, sendWSABuf, session->_sendPacketLen, &sendBytes, flag, &session->_sendOverlapped._obj, NULL);
 
 		if (sendRet == SOCKET_ERROR)
 		{
@@ -543,8 +578,6 @@ namespace TCPFighter_IOCP_Server
 				break;
 			}
 		}
-
-		session->_sendBuf.MoveFront(sendBytes);
 	}
 
 	void IServer::RecvHandler(Session* session, const DWORD byte)
@@ -595,12 +628,19 @@ namespace TCPFighter_IOCP_Server
 	{
 		AcquireSRWLockExclusive(&session->_lock);
 
-		if (--session->_sendStatus == 0)
-		{
-			SendPost(session);
-		}
+		SPacket* packetList[WSA_SEND_BUF_LEN_MAX];
+		session->_sendBuf.Peek((char*)&packetList, sizeof(SPacket*) * session->_sendPacketLen);
+		session->_sendBuf.Dequeue(sizeof(SPacket*) * session->_sendPacketLen);
+
+		session->_sendStatus = 0;
+		SendPost(session);
 
 		ReleaseSRWLockExclusive(&session->_lock);
+
+		for (int packetCnt = 0; packetCnt < session->_sendPacketLen; packetCnt++)
+		{
+			_sendPacketPool->Free(packetList[packetCnt]);
+		}
 
 		return;
 	}

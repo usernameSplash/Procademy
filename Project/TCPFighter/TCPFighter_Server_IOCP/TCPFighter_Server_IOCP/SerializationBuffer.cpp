@@ -133,12 +133,12 @@ size_t SPacket::MoveWritePos(size_t size)
 	return size;
 }
 
-void SPacket::SetHeaderData(void* header)
+void SPacket::SetHeaderData(SPacketHeader* header)
 {
 	memcpy(mBuffer, header, sizeof(SPacketHeader));
 }
 
-void SPacket::GetHeaderData(void* outHeader)
+void SPacket::GetHeaderData(SPacketHeader* outHeader)
 {
 	memcpy(outHeader, mBuffer, sizeof(SPacketHeader));
 }
