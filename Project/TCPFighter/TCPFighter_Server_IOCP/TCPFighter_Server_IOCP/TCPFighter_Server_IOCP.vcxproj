@@ -151,6 +151,7 @@
     <ClCompile Include="Region.cpp" />
     <ClCompile Include="RingBuffer.cpp" />
     <ClCompile Include="SerializationBuffer.cpp" />
+    <ClCompile Include="GameServer.cpp" />
     <ClCompile Include="Session.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -161,6 +162,7 @@
     <ClInclude Include="Protocol.h" />
     <ClInclude Include="Region.h" />
     <ClInclude Include="RingBuffer.h" />
+    <ClInclude Include="GameServer.h" />
     <ClInclude Include="Session.h" />
     <ClInclude Include="SerializationBuffer.h" />
   </ItemGroup>
