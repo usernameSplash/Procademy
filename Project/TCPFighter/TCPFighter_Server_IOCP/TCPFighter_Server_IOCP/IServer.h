@@ -105,6 +105,9 @@ namespace TCPFighter_IOCP_Server
 		int _returnedIdCnt;
 		SRWLOCK _returnedIdListLock;
 
+	protected:
+		ObjectPool<SPacket>* _sendPacketPool;
+
 	private:
 		// Server State
 		bool _bRunning;

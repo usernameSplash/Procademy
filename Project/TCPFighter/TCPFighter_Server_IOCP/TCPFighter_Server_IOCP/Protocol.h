@@ -47,6 +47,7 @@ enum class ePacketType
 #define ERROR_RANGE	50
 
 #define SESSION_MAX 7000
+#define PAKCET_POOL_SIZE 30000
 
 #define FRAME_PER_SEC 25
 #define MILLISEC_PER_FRAME (1000 / FRAME_PER_SEC)

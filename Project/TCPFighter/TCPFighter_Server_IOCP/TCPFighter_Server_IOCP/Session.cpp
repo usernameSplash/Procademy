@@ -7,10 +7,11 @@ namespace TCPFighter_IOCP_Server
 		, _clientSocket(INVALID_SOCKET)
 		, _recvBuf(4096)
 		, _sendBuf(4096)
+		, _sendPacketLen(0)
+		, _sendPacketCnt(0)
 		, _ioCount(1)
 		, _sendStatus(0)
 		, _bConnected(false)
-		, _bNoMoreIO(false)
 	{
 		ZeroMemory(&_clientAddr, sizeof(_clientAddr));
 
@@ -19,7 +20,7 @@ namespace TCPFighter_IOCP_Server
 
 		ZeroMemory(&_recvOverlapped._obj, sizeof(OVERLAPPED));
 		_recvOverlapped._type = eOverlappedType::RECV;
-
+		
 		InitializeSRWLock(&_lock);
 	}
 

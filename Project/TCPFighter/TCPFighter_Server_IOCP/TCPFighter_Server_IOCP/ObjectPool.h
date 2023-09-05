@@ -33,8 +33,7 @@ ObjectPool<T>::ObjectPool(int capacity)
 		capacity = OBJECT_POOL_MIN_SIZE;
 	}
 
-	_head = new Node;
-	_head->_next = nullptr;
+	_head = nullptr;
 
 	for (int iCnt = 0; iCnt < capacity; ++iCnt)
 	{

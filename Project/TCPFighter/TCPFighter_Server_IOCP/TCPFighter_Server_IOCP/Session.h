@@ -11,6 +11,8 @@ using SessionID = __int64;
 using namespace std;
 using namespace MyDataStructure;
 
+#define WSA_SEND_BUF_LEN_MAX 100
+
 namespace TCPFighter_IOCP_Server
 {
 	enum class eOverlappedType
@@ -34,27 +36,24 @@ namespace TCPFighter_IOCP_Server
 		void Initialize(const size_t id, const SOCKET socket, const SOCKADDR_IN addr);
 
 	public:
-		size_t _id;
+		SessionID _id;
 		SOCKET _clientSocket;
 		SOCKADDR_IN _clientAddr;
 
 		MyOverlapped _sendOverlapped;
 		MyOverlapped _recvOverlapped;
 
-		RingBuffer _sendBuf;
 		RingBuffer _recvBuf;
-		WSABUF _wsaSendBuf[2];
-		WSABUF _wsaRecvBuf[2];
+		RingBuffer _sendBuf;
 
-		SPacket _sendPacket;
-		SPacket _recvPacket;
+		DWORD _sendPacketLen;
+		DWORD _sendPacketCnt;
 
 		SRWLOCK _lock;
 		long _ioCount;
 		long _sendStatus;
 
 		bool _bConnected;
-		bool _bNoMoreIO;
 	};
 
 	class SessionManager : public std::unordered_map<size_t, Session*>

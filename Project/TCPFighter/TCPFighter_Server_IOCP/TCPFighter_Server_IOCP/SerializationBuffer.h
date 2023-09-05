@@ -31,8 +31,8 @@ public:
 	size_t MoveReadPos(size_t size);
 	size_t MoveWritePos(size_t size);
 
-	void SetHeaderData(void* header);
-	void GetHeaderData(void* outHeader);
+	void SetHeaderData(SPacketHeader* header);
+	void GetHeaderData(SPacketHeader* outHeader);
 
 public:
 	SPacket& operator=(SPacket& rhs);
