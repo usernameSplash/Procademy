@@ -45,6 +45,9 @@
     <ClCompile Include="Session.cpp">
       <Filter>Network</Filter>
     </ClCompile>
+    <ClCompile Include="GameServer.cpp">
+      <Filter>Network</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="main.h">
@@ -72,6 +75,9 @@
       <Filter>Network</Filter>
     </ClInclude>
     <ClInclude Include="Session.h">
+      <Filter>Network</Filter>
+    </ClInclude>
+    <ClInclude Include="GameServer.h">
       <Filter>Network</Filter>
     </ClInclude>
   </ItemGroup>
