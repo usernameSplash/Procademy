@@ -46,5 +46,8 @@
     <ClInclude Include="SessionManager.h">
       <Filter>Network</Filter>
     </ClInclude>
+    <ClInclude Include="NetworkProtocol.h">
+      <Filter>Network</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
