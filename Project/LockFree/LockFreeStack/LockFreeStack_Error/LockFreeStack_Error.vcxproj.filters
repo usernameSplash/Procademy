@@ -1,0 +1,27 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Code">
+      <UniqueIdentifier>{5da0f153-2add-4e15-ac82-080c0ff5df35}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Util">
+      <UniqueIdentifier>{cc31d5b8-c923-491b-9398-f5459d91ffd9}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="LockFreeStack.h">
+      <Filter>Code</Filter>
+    </ClInclude>
+    <ClInclude Include="CrashDump.h">
+      <Filter>Util</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="main.cpp">
+      <Filter>Code</Filter>
+    </ClCompile>
+    <ClCompile Include="LockFreePool.h">
+      <Filter>Code</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>

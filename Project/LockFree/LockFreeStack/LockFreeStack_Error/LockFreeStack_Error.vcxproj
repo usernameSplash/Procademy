@@ -21,8 +21,8 @@
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{bc7025b1-3f7f-4454-b9ff-b84b03c0e5d7}</ProjectGuid>
-    <RootNamespace>LockFreePool</RootNamespace>
+    <ProjectGuid>{d04e74de-27bd-4c4e-ab56-d0c39708ad2c}</ProjectGuid>
+    <RootNamespace>LockFreeStackError</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -127,10 +127,12 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="main.cpp" />
+    <ClInclude Include="CrashDump.h" />
+    <ClInclude Include="LockFreeStack.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="ObjectPool.h" />
+    <ClCompile Include="LockFreePool.h" />
+    <ClCompile Include="main.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
