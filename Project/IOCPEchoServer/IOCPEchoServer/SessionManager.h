@@ -18,15 +18,26 @@ namespace Network
 		Session* AllocSession(void);
 		void FreeSession(const SessionID sessionId);
 
+		bool CanAllocNewSession(void)
+		{
+			return (_sessionCnt < _maxSessionCount);
+		}
+		long GetSessionCount(void)
+		{
+			return _sessionCnt;
+		}
+
 	public:
 		Session* _sessionList;
-		vector<SessionID> _freeIdList;
 
+	private:
+		vector<SessionID> _freeIdList;
 		SRWLOCK _freeIdListLock;
 
 	private:
 		int _freeIdCnt;
 		long _maxSessionCount;
+		long _sessionCnt;
 	};
 
 }

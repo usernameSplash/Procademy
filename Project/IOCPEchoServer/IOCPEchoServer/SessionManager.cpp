@@ -3,7 +3,8 @@
 namespace Network
 {
 	SessionManager::SessionManager(long maxSessionCount)
-		: _freeIdCnt(maxSessionCount)
+		: _sessionCnt(0)
+		, _freeIdCnt(maxSessionCount)
 		, _maxSessionCount(maxSessionCount)
 	{
 		_sessionList = new Session[_maxSessionCount];
@@ -37,7 +38,11 @@ namespace Network
 		_freeIdList.pop_back();
 		ReleaseSRWLockExclusive(&_freeIdListLock);
 
+		newSession = &_sessionList[newId];
 		newSession->_id = newId;
+
+		InterlockedIncrement(&_sessionCnt);
+
 		return newSession;
 	}
 
@@ -48,6 +53,8 @@ namespace Network
 		AcquireSRWLockExclusive(&_freeIdListLock);
 		_freeIdList.push_back(sessionId);
 		ReleaseSRWLockExclusive(&_freeIdListLock);
+
+		InterlockedDecrement(&_sessionCnt);
 
 		return;
 	}
