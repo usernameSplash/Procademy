@@ -57,7 +57,7 @@ namespace Network
 			int sendBufSize = 0;
 
 			sendBufSizeSetRet = setsockopt(_listenSocket, SOL_SOCKET, SO_SNDBUF, (char*)&sendBufSize, sizeof(sendBufSize));
-			if (nagleOptSetRet == SOCKET_ERROR)
+			if (sendBufSizeSetRet == SOCKET_ERROR)
 			{
 				wprintf(L"# Socket Send Buffer Size Setting Failed\n");
 				return false;
@@ -167,7 +167,7 @@ namespace Network
 
 	bool NetLib::Disconnect(const SessionID sessionId)
 	{
-
+		// To do
 	}
 
 	bool NetLib::SendPacket(const SessionID sessionId, SPacket* packet)
@@ -177,15 +177,170 @@ namespace Network
 
 	unsigned int WINAPI NetLib::AcceptProc(void* arg)
 	{
+		NetLib* instance = static_cast<NetLib*>(arg);
 
+		wprintf(L"# Accept Proc Start\n");
+
+		int addrLen = sizeof(SOCKADDR_IN);
+
+		while (true)
+		{
+			SOCKET clientSocket;
+			SOCKADDR_IN clientAddr;
+
+			clientSocket = accept(instance->_listenSocket, (SOCKADDR*)&clientAddr, &addrLen);
+			if (clientSocket == INVALID_SOCKET)
+			{
+				wprintf(L"# Accept Failed\n");
+				g_bRunning = false;
+				break;
+			}
+
+			if (!g_bRunning || !instance->_bRunning)
+			{
+				break;
+			}
+
+			if (!instance->_sessionManager.CanAllocNewSession())
+			{
+				wprintf(L"# Limit Of Session Num Exceeded\n");
+				closesocket(clientSocket);
+			}
+
+#pragma region validate_connection
+			wchar_t clientIp[16];
+			short port;
+			InetNtopW(AF_INET, &clientAddr.sin_addr, clientIp, 16);
+			port = htons(clientAddr.sin_port);
+
+			if (instance->OnConnectionRequest(clientIp, port))
+			{
+				wprintf(L"# Invalid Connection, [IP : %s:%d]", clientIp, port);
+				closesocket(clientSocket);
+				continue;
+			}
+#pragma endregion
+
+#pragma region new_session_allocation
+			Session* newSession = instance->_sessionManager.AllocSession();
+
+			if (newSession == nullptr)
+			{
+				wprintf(L"# Session Allocation Failed\n");
+				closesocket(clientSocket);
+				continue;
+			}
+
+			newSession->SetSocket(clientSocket);
+			++instance->_acceptCnt;
+
+			instance->OnClientJoin(newSession->_id);
+
+			CreateIoCompletionPort((HANDLE)clientSocket, instance->_networkIOCP, (ULONG_PTR)newSession, 0);
+
+			instance->RecvPost(newSession);
+
+#pragma endregion
+		}
+
+		wprintf(L"# Accept Proc End\n");
+
+		return 0;
 	}
 
 	unsigned int WINAPI NetLib::WorkerProc(void* arg)
 	{
+		NetLib* instance = static_cast<NetLib*>(arg);
 
+		wprintf(L"# Worker Proc Start\n");
+
+		while (true)
+		{
+			Session* session;
+			DWORD transferredBytes;
+			OVERLAPPED* ovl;
+
+			int gqcsRet = GetQueuedCompletionStatus(instance->_networkIOCP, &transferredBytes, (PULONG_PTR)&session, (LPOVERLAPPED*)&ovl, INFINITE);
+
+			if (!g_bRunning || !instance->_bRunning)
+			{
+				break;
+			}
+
+			if (ovl == &session->_releaseOvl)
+			{
+				instance->ReleaseHandler(session);
+				continue;
+			}
+
+			if (gqcsRet == 0 || transferredBytes == 0)
+			{
+				if (gqcsRet == 0)
+				{
+					DWORD temp1, temp2;
+
+					WSAGetOverlappedResult(session->_socket, (LPWSAOVERLAPPED)ovl, &temp1, FALSE, &temp2);
+
+					int errorCode;
+					errorCode = WSAGetLastError();
+
+					switch (errorCode)
+					{
+					case WSAENOTSOCK:
+					case WSAECONNABORTED:
+					case WSAECONNRESET:
+						break;
+					default:
+						wprintf(L"GQCS Error : %d on %d\n", errorCode, __LINE__);
+						break;
+					}
+				}
+			}
+
+			else if (ovl == &session->_recvOvl)
+			{
+				instance->RecvHandler(session, transferredBytes);
+				InterlockedIncrement(&instance->_recvCnt);
+			}
+
+			else if (ovl == &session->_sendOvl)
+			{
+				instance->SendHandler(session, transferredBytes);
+				InterlockedIncrement(&instance->_sendCnt);
+			}
+
+			if (InterlockedDecrement(&session->_ioCount) == 0)
+			{
+				PostQueuedCompletionStatus(instance->_networkIOCP, 1, (ULONG_PTR)session, (LPOVERLAPPED)&session->_releaseOvl);
+			}
+		}
+
+		wprintf(L"# Worker Proc End\n");
+
+		return 0;
 	}
 
 	void NetLib::RecvPost(Session* session)
+	{
+
+	}
+
+	void NetLib::SendPost(Session* session)
+	{
+
+	}
+
+	void NetLib::RecvHandler(Session* session, const DWORD byte)
+	{
+
+	}
+
+	void NetLib::SendHandler(Session* session, const DWORD byte)
+	{
+
+	}
+
+	void NetLib::ReleaseHandler(Session* session)
 	{
 
 	}

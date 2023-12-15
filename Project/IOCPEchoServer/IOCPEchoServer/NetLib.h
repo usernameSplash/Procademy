@@ -59,9 +59,9 @@ namespace Network
 			return _sendTPS;
 		}
 
-		int GetSessionCount(void) const
+		int GetSessionCount(void)
 		{
-			return _sessionCnt;
+			return (int)_sessionManager.GetSessionCount();
 		}
 
 		void UpdateMonitorStatistics(void);
@@ -108,21 +108,20 @@ namespace Network
 	private:
 		// Server State
 		bool _bRunning;
-		long _sessionCnt;
 		// SessionMap
 
-		int _acceptTotal;
-		int _disconnectTotal;
+		long _acceptTotal;
+		long _disconnectTotal;
 
-		int _acceptTPS;
-		int _disconnectTPS;
-		int _recvTPS;
-		int _sendTPS;
+		long _acceptTPS;
+		long _disconnectTPS;
+		long _recvTPS;
+		long _sendTPS;
 
-		int _acceptCnt;
-		int _disconnectCnt;
-		int _recvCnt;
-		int _sendCnt;
+		long _acceptCnt;
+		long _disconnectCnt;
+		long _recvCnt;
+		long _sendCnt;
 
 	private:
 		// Kernel Object Handles
