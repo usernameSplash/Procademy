@@ -9,9 +9,9 @@ public:
 	enum eBufferDefault
 	{
 		BUFFER_HEADER_MAX_SIZE = 64,
-		BUFFER_MINIMUM_SIZE = 64,
-		BUFFER_DEFAULT_SIZE = 512,
-		BUFFER_MAX_SIZE = 4096,
+		BUFFER_MINIMUM_SIZE = 128,
+		BUFFER_DEFAULT_SIZE = 128,
+		BUFFER_MAX_SIZE = 1024,
 	};
 
 	SPacket();
@@ -25,7 +25,7 @@ public:
 	size_t GetHeaderSize(void);
 	size_t GetPayloadSize(void);
 
-	void Reserve(size_t size);
+	bool Reserve(size_t size);
 
 	char* GetBufferPtr(void);
 	char* GetPayloadPtr(void);

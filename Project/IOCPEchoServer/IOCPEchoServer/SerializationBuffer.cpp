@@ -9,12 +9,14 @@ SPacket::SPacket()
 	, mReadPos(mPayloadPtr)
 	, mWritePos(mPayloadPtr)
 	, mCapacity(BUFFER_DEFAULT_SIZE)
+	, mHeaderSize(0)
 	, mSize(BUFFER_HEADER_MAX_SIZE)
 {
 }
 
 SPacket::SPacket(size_t capacity)
-	: mSize(BUFFER_HEADER_MAX_SIZE)
+	: mHeaderSize(0)
+	, mSize(BUFFER_HEADER_MAX_SIZE)
 {
 	if (capacity < BUFFER_MINIMUM_SIZE)
 	{
@@ -77,19 +79,21 @@ size_t SPacket::GetPayloadSize(void)
 	return mSize - BUFFER_HEADER_MAX_SIZE;
 }
 
-void SPacket::Reserve(size_t capacity)
+bool SPacket::Reserve(size_t capacity)
 {
+	char* newBuffer;
+
 	if (mCapacity > capacity)
 	{
-		return;
+		return false;
 	}
 
 	if (capacity > BUFFER_MAX_SIZE)
 	{
-		capacity = BUFFER_MAX_SIZE;
+		return false;
 	}
 
-	char* newBuffer = new char[capacity];
+	newBuffer = new char[capacity];
 
 	memcpy(newBuffer, mBuffer, mSize);
 
@@ -102,7 +106,7 @@ void SPacket::Reserve(size_t capacity)
 	mReadPos = mPayloadPtr;
 	mWritePos = mPayloadPtr + mSize;
 
-	return;
+	return true;
 }
 
 char* SPacket::GetBufferPtr(void)
@@ -217,21 +221,12 @@ SPacket& SPacket::operator<<(unsigned char data)
 
 	if ((mSize + sizeof(data) > mCapacity))
 	{
-		if (mSize + sizeof(data) > BUFFER_MAX_SIZE)
+		if (!Reserve(mCapacity * 2))
 		{
 #ifdef DEBUG
 			wprintf(L"[SPacket] : Input Error, Data : %u\n", data);
 #endif
 			return *this;
-		}
-
-		if ((mCapacity - BUFFER_HEADER_MAX_SIZE) * 2 > BUFFER_MAX_SIZE)
-		{
-			Reserve(BUFFER_MAX_SIZE);
-		}
-		else
-		{
-			Reserve((mCapacity - BUFFER_HEADER_MAX_SIZE) * 2);
 		}
 	}
 
@@ -254,21 +249,12 @@ SPacket& SPacket::operator<<(char data)
 
 	if ((mSize + sizeof(data) > mCapacity))
 	{
-		if (mSize + sizeof(data) > BUFFER_MAX_SIZE)
+		if (!Reserve(mCapacity * 2))
 		{
 #ifdef DEBUG
-			wprintf(L"[SPacket] : Input Error, Data : %d\n", data);
+			wprintf(L"[SPacket] : Input Error, Data : %u\n", data);
 #endif
 			return *this;
-		}
-
-		if ((mCapacity - BUFFER_HEADER_MAX_SIZE) * 2 > BUFFER_MAX_SIZE)
-		{
-			Reserve(BUFFER_MAX_SIZE);
-		}
-		else
-		{
-			Reserve((mCapacity - BUFFER_HEADER_MAX_SIZE) * 2);
 		}
 	}
 
@@ -291,21 +277,12 @@ SPacket& SPacket::operator<<(unsigned short data)
 
 	if ((mSize + sizeof(data) > mCapacity))
 	{
-		if (mSize + sizeof(data) > BUFFER_MAX_SIZE)
+		if (!Reserve(mCapacity * 2))
 		{
 #ifdef DEBUG
 			wprintf(L"[SPacket] : Input Error, Data : %u\n", data);
 #endif
 			return *this;
-		}
-
-		if ((mCapacity - BUFFER_HEADER_MAX_SIZE) * 2 > BUFFER_MAX_SIZE)
-		{
-			Reserve(BUFFER_MAX_SIZE);
-		}
-		else
-		{
-			Reserve((mCapacity - BUFFER_HEADER_MAX_SIZE) * 2);
 		}
 	}
 
@@ -328,21 +305,12 @@ SPacket& SPacket::operator<<(short data)
 
 	if ((mSize + sizeof(data) > mCapacity))
 	{
-		if (mSize + sizeof(data) > BUFFER_MAX_SIZE)
+		if (!Reserve(mCapacity * 2))
 		{
 #ifdef DEBUG
-			wprintf(L"[SPacket] : Input Error, Data : %d\n", data);
+			wprintf(L"[SPacket] : Input Error, Data : %u\n", data);
 #endif
 			return *this;
-		}
-
-		if ((mCapacity - BUFFER_HEADER_MAX_SIZE) * 2 > BUFFER_MAX_SIZE)
-		{
-			Reserve(BUFFER_MAX_SIZE);
-		}
-		else
-		{
-			Reserve((mCapacity - BUFFER_HEADER_MAX_SIZE) * 2);
 		}
 	}
 
@@ -365,21 +333,12 @@ SPacket& SPacket::operator<<(unsigned int data)
 
 	if ((mSize + sizeof(data) > mCapacity))
 	{
-		if (mSize + sizeof(data) > BUFFER_MAX_SIZE)
+		if (!Reserve(mCapacity * 2))
 		{
 #ifdef DEBUG
 			wprintf(L"[SPacket] : Input Error, Data : %u\n", data);
 #endif
 			return *this;
-		}
-
-		if ((mCapacity - BUFFER_HEADER_MAX_SIZE) * 2 > BUFFER_MAX_SIZE)
-		{
-			Reserve(BUFFER_MAX_SIZE);
-		}
-		else
-		{
-			Reserve((mCapacity - BUFFER_HEADER_MAX_SIZE) * 2);
 		}
 	}
 
@@ -402,21 +361,12 @@ SPacket& SPacket::operator<<(int data)
 
 	if ((mSize + sizeof(data) > mCapacity))
 	{
-		if (mSize + sizeof(data) > BUFFER_MAX_SIZE)
+		if (!Reserve(mCapacity * 2))
 		{
 #ifdef DEBUG
-			wprintf(L"[SPacket] : Input Error, Data : %d\n", data);
+			wprintf(L"[SPacket] : Input Error, Data : %u\n", data);
 #endif
 			return *this;
-		}
-
-		if ((mCapacity - BUFFER_HEADER_MAX_SIZE) * 2 > BUFFER_MAX_SIZE)
-		{
-			Reserve(BUFFER_MAX_SIZE);
-		}
-		else
-		{
-			Reserve((mCapacity - BUFFER_HEADER_MAX_SIZE) * 2);
 		}
 	}
 
@@ -439,21 +389,12 @@ SPacket& SPacket::operator<<(unsigned long data)
 
 	if ((mSize + sizeof(data) > mCapacity))
 	{
-		if (mSize + sizeof(data) > BUFFER_MAX_SIZE)
+		if (!Reserve(mCapacity * 2))
 		{
 #ifdef DEBUG
 			wprintf(L"[SPacket] : Input Error, Data : %u\n", data);
 #endif
 			return *this;
-		}
-
-		if ((mCapacity - BUFFER_HEADER_MAX_SIZE) * 2 > BUFFER_MAX_SIZE)
-		{
-			Reserve(BUFFER_MAX_SIZE);
-		}
-		else
-		{
-			Reserve((mCapacity - BUFFER_HEADER_MAX_SIZE) * 2);
 		}
 	}
 
@@ -476,21 +417,12 @@ SPacket& SPacket::operator<<(long data)
 
 	if ((mSize + sizeof(data) > mCapacity))
 	{
-		if (mSize + sizeof(data) > BUFFER_MAX_SIZE)
+		if (!Reserve(mCapacity * 2))
 		{
 #ifdef DEBUG
-			wprintf(L"[SPacket] : Input Error, Data : %d\n", data);
+			wprintf(L"[SPacket] : Input Error, Data : %u\n", data);
 #endif
 			return *this;
-		}
-
-		if ((mCapacity - BUFFER_HEADER_MAX_SIZE) * 2 > BUFFER_MAX_SIZE)
-		{
-			Reserve(BUFFER_MAX_SIZE);
-		}
-		else
-		{
-			Reserve((mCapacity - BUFFER_HEADER_MAX_SIZE) * 2);
 		}
 	}
 
@@ -513,21 +445,12 @@ SPacket& SPacket::operator<<(unsigned long long data)
 
 	if ((mSize + sizeof(data) > mCapacity))
 	{
-		if (mSize + sizeof(data) > BUFFER_MAX_SIZE)
+		if (!Reserve(mCapacity * 2))
 		{
 #ifdef DEBUG
-			wprintf(L"[SPacket] : Input Error, Data : %llu\n", data);
+			wprintf(L"[SPacket] : Input Error, Data : %u\n", data);
 #endif
 			return *this;
-		}
-
-		if ((mCapacity - BUFFER_HEADER_MAX_SIZE) * 2 > BUFFER_MAX_SIZE)
-		{
-			Reserve(BUFFER_MAX_SIZE);
-		}
-		else
-		{
-			Reserve((mCapacity - BUFFER_HEADER_MAX_SIZE) * 2);
 		}
 	}
 
@@ -550,21 +473,12 @@ SPacket& SPacket::operator<<(long long data)
 
 	if ((mSize + sizeof(data) > mCapacity))
 	{
-		if (mSize + sizeof(data) > BUFFER_MAX_SIZE)
+		if (!Reserve(mCapacity * 2))
 		{
 #ifdef DEBUG
-			wprintf(L"[SPacket] : Input Error, Data : %lld\n", data);
+			wprintf(L"[SPacket] : Input Error, Data : %u\n", data);
 #endif
 			return *this;
-		}
-
-		if ((mCapacity - BUFFER_HEADER_MAX_SIZE) * 2 > BUFFER_MAX_SIZE)
-		{
-			Reserve(BUFFER_MAX_SIZE);
-		}
-		else
-		{
-			Reserve((mCapacity - BUFFER_HEADER_MAX_SIZE) * 2);
 		}
 	}
 
@@ -587,21 +501,12 @@ SPacket& SPacket::operator<<(float data)
 
 	if ((mSize + sizeof(data) > mCapacity))
 	{
-		if (mSize + sizeof(data) > BUFFER_MAX_SIZE)
+		if (!Reserve(mCapacity * 2))
 		{
 #ifdef DEBUG
-			wprintf(L"[SPacket] : Input Error, Data : %f\n", data);
+			wprintf(L"[SPacket] : Input Error, Data : %u\n", data);
 #endif
 			return *this;
-		}
-
-		if ((mCapacity - BUFFER_HEADER_MAX_SIZE) * 2 > BUFFER_MAX_SIZE)
-		{
-			Reserve(BUFFER_MAX_SIZE);
-		}
-		else
-		{
-			Reserve((mCapacity - BUFFER_HEADER_MAX_SIZE) * 2);
 		}
 	}
 
@@ -624,21 +529,12 @@ SPacket& SPacket::operator<<(double data)
 
 	if ((mSize + sizeof(data) > mCapacity))
 	{
-		if (mSize + sizeof(data) > BUFFER_MAX_SIZE)
+		if (!Reserve(mCapacity * 2))
 		{
 #ifdef DEBUG
-			wprintf(L"[SPacket] : Input Error, Data : %lf\n", data);
+			wprintf(L"[SPacket] : Input Error, Data : %u\n", data);
 #endif
 			return *this;
-		}
-
-		if ((mCapacity - BUFFER_HEADER_MAX_SIZE) * 2 > BUFFER_MAX_SIZE)
-		{
-			Reserve(BUFFER_MAX_SIZE);
-		}
-		else
-		{
-			Reserve((mCapacity - BUFFER_HEADER_MAX_SIZE) * 2);
 		}
 	}
 
