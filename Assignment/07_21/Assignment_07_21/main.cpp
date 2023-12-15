@@ -1,76 +1,71 @@
+﻿
+#include <stdio.h>
+#include <process.h>
+#include <time.h>
+#include <Windows.h>
+
 #pragma comment(lib, "winmm.lib")
 
-#include <Windows.h>
-#include <process.h>
-#include <intrin.h>
-#include <atomic>
+int cnt = 0;
+bool g_shutdown = false;
+int turn = 0;
+bool flag[2] = { false, false };
 
-#include <cstdio>
+unsigned char debug = 0x00;
 
-
-void Lock(int procId);
-void Unlock(int procId);
-
-unsigned int WINAPI ThreadProc(void* arg);
-
-bool flag[2];
-int turn;
-
-int g_Value = 0;
-int g_ProcValue[2] = { 0, 0 };
-
-
-int wmain(void)
+unsigned WINAPI Lock0(void* arg)
 {
-	HANDLE threadArr[2];
-
-	int procId[2] = { 0, 1 };
-
-	threadArr[0] = (HANDLE)_beginthreadex(nullptr, 0, ThreadProc, (void*)&procId[0], 0, nullptr);
-	threadArr[1] = (HANDLE)_beginthreadex(nullptr, 0, ThreadProc, (void*)&procId[1], 0, nullptr);
-
-	WaitForMultipleObjects(2, threadArr, TRUE, INFINITE);
-
-	wprintf(L"g_Value : %d\n", g_Value);
-	wprintf(L"g_ProcValue1 : %d\n", g_ProcValue[0]);
-	wprintf(L"g_ProcValue2 : %d\n", g_ProcValue[1]);
-
+	for (int i = 0; i < 100000; i++)
+	{
+		flag[0] = true;
+		turn = 0;
+		while (flag[1] && turn == 0)
+		{
+			if (debug == 0xff)
+			{
+				printf("%s: flag[%d, %d], turn - %d\n",
+					__func__, flag[0], flag[1], turn);
+				__debugbreak();
+			}
+			debug |= 0x0f;
+		}
+		debug &= 0xf0;
+		cnt++;
+		flag[0] = false;
+	}
 	return 0;
 }
 
-void Lock(int procId)
+unsigned WINAPI Lock1(void* arg)
 {
-	int oppositeId = 1 - procId;
-	flag[procId] = true;
-	turn = oppositeId;
-
-	_mm_mfence();
-	//std::atomic_thread_fence(std::memory_order::memory_order_seq_cst);
-	
-	while (flag[oppositeId] && turn == oppositeId)
+	for (int i = 0; i < 100000; i++)
 	{
+		flag[1] = true;
+		turn = 1;
+		while (flag[0] && turn == 1)
+		{
+			if (debug == 0xff)
+			{
+				printf("%s: flag[%d, %d], turn - %d\n",
+					__func__, flag[0], flag[1], turn);
+				__debugbreak();
+			}
+			debug |= 0xf0;
+		}
+		debug &= 0x0f;
+		cnt++;
+		flag[1] = false;
 	}
-
-	return;
+	return 0;
 }
 
-void Unlock(int procId)
+#define threadCnt 2
+int main()
 {
-	flag[procId] = false;
-}
-
-unsigned int WINAPI ThreadProc(void* arg)
-{
-	int procId = (*(int*)arg);
-
-	for (int iCnt = 0; iCnt < 1000000000; iCnt++)
-	{
-		Lock(procId);
-		g_Value++;
-		Unlock(procId);
-
-		g_ProcValue[procId]++;
-	}
-
+	HANDLE arrThread[threadCnt];
+	arrThread[0] = (HANDLE)_beginthreadex(NULL, 0, Lock0, NULL, 0, nullptr);
+	arrThread[1] = (HANDLE)_beginthreadex(NULL, 0, Lock1, NULL, 0, nullptr);
+	WaitForMultipleObjects(threadCnt, arrThread, true, INFINITE);
+	printf("%d", cnt);
 	return 0;
 }
