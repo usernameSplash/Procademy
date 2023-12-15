@@ -57,7 +57,7 @@ namespace MyDataStructure
 		mCapacity = capacity;
 
 		mFront = 0;
-		mRear = mSize;
+		mRear = (int)mSize;
 
 		return true;
 	}
