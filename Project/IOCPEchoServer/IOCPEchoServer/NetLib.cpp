@@ -199,7 +199,7 @@ namespace Network
 		enqueueRet = session->_sendBuf.Enqueue(netPacket.GetBufferPtr(), packetSize);
 		if (enqueueRet != packetSize)
 		{
-			wprintf(L"# %d Session Enqueue Error\n", session->_id);
+			wprintf(L"# %lld Session Enqueue Error\n", session->_id);
 			g_bRunning = false;
 			LeaveCriticalSection(&session->_lock);
 
@@ -359,12 +359,88 @@ namespace Network
 
 	void NetLib::RecvPost(Session* session)
 	{
+		InterlockedIncrement(&session->_ioCount);
 
+		size_t freeSize = session->_recvBuf.Capacity() - session->_recvBuf.Size();
+
+		int recvRet;
+		DWORD recvByte;
+		WSABUF wsaBuf[2];
+
+		wsaBuf[0].len = (ULONG)session->_recvBuf.DirectEnqueueSize();
+		wsaBuf[0].buf = session->_recvBuf.GetRearBufferPtr();
+		wsaBuf[1].len = freeSize - wsaBuf[0].len;
+		wsaBuf[1].buf = session->_recvBuf.GetBufferPtr();
+
+		ZeroMemory(&session->_recvOvl, sizeof(session->_recvOvl));
+
+		recvRet = WSARecv(session->_socket, wsaBuf, 2, &recvByte, 0, &session->_recvOvl, NULL);
+		if (recvRet == SOCKET_ERROR)
+		{
+			int errorCode;
+			errorCode = WSAGetLastError();
+
+			switch (errorCode)
+			{
+			case ERROR_IO_PENDING:
+			case WSAECONNABORTED:
+			case WSAECONNRESET:
+				break;
+			default:
+				wprintf(L"# [RecvPost Error] Session ID : %lld\n", session->_id);
+				break;
+			}
+		}
 	}
 
 	void NetLib::SendPost(Session* session)
 	{
+		if (InterlockedExchange(&session->_sendFlag, 1) == 1)
+		{
+			return;
+		}
 
+		if (session->_sendBuf.Size() == 0)
+		{
+			InterlockedExchange(&session->_sendFlag, 0);
+			return;
+		}
+
+		InterlockedIncrement(&session->_ioCount);
+
+		ULONG sendBufSize = (ULONG)session->_sendBuf.Size();
+
+		int sendRet;
+		DWORD sendByte;
+		WSABUF wsaBuf[2];
+
+		wsaBuf[0].len = (ULONG)session->_sendBuf.DirectDequeueSize();
+		wsaBuf[0].buf = session->_sendBuf.GetFrontBufferPtr();
+		wsaBuf[1].len = sendBufSize - wsaBuf[0].len;
+		wsaBuf[1].buf = session->_sendBuf.GetBufferPtr();
+
+		ZeroMemory(&session->_sendOvl, sizeof(session->_sendOvl));
+
+		sendRet = WSASend(session->_socket, wsaBuf, 2, &sendByte, 0, (LPWSAOVERLAPPED)&session->_sendOvl, NULL);
+		if (sendRet == SOCKET_ERROR)
+		{
+			int errorCode;
+			errorCode = WSAGetLastError();
+
+			switch (errorCode)
+			{
+			case ERROR_IO_PENDING:
+			case WSAECONNABORTED:
+			case WSAECONNRESET:
+				break;
+			default:
+				wprintf(L"# [SendPost Error] Session ID : %lld\n", session->_id);
+				break;
+			}
+		}
+
+		return;
+		
 	}
 
 	void NetLib::RecvHandler(Session* session, const DWORD byte)
@@ -374,7 +450,7 @@ namespace Network
 		recvBufSize = session->_recvBuf.Size();
 		if (recvBufSize != byte)
 		{
-			wprintf(L"# %d Recv Buf Byte : %d, but Recv Data Byte : %d\n", recvBufSize, byte);
+			wprintf(L"# Session ID %lld Recv Buf Byte : %d, but Recv Data Byte : %d\n", session->_id, recvBufSize, byte);
 			g_bRunning = false;
 			return;
 		}
@@ -418,7 +494,7 @@ namespace Network
 		moveRet = session->_sendBuf.Dequeue(byte);
 		if (moveRet != byte)
 		{
-			wprintf(L"# %d Session Dequeue Error\n", session->_id);
+			wprintf(L"# %lld Session Dequeue Error\n", session->_id);
 			g_bRunning = false;
 			return;
 		}
