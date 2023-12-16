@@ -102,8 +102,8 @@ namespace Network
 
 		SessionManager _sessionManager;
 
-	//protected:
-		//ObjectPool<SPacket>* _sendPacketPool;
+	protected:
+		ObjectPool<SPacket>* _sendPacketPool;
 
 	private:
 		// Server State

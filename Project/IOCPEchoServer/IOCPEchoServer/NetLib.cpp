@@ -1,4 +1,5 @@
 #include "NetLib.h"
+#include "NetworkProtocol.h"
 #include "main.h"
 
 namespace Network
@@ -11,6 +12,8 @@ namespace Network
 		_numOfWorkerThread = numOfWorkerThread;
 		_nagleOption = nagleOption;
 		_maxSession = maxSession;
+
+		_sendPacketPool = new ObjectPool<SPacket>(SEND_PACKET_MAX_CNT);
 
 		if (numOfWorkerThread <= 0)
 		{
@@ -172,7 +175,41 @@ namespace Network
 
 	bool NetLib::SendPacket(const SessionID sessionId, SPacket* packet)
 	{
+		Session* session = &_sessionManager._sessionList[sessionId];
 
+		EnterCriticalSection(&session->_lock);
+
+		if (session->_id == INVALID_SESSION_ID)
+		{	
+			LeaveCriticalSection(&session->_lock);
+			return false;
+		}
+
+		SPacket netPacket;
+		NetworkHeader header;
+		size_t enqueueRet;
+		size_t packetSize;
+
+		header.len = static_cast<short>(packet->Size());
+
+		netPacket.SetHeaderData(&header, sizeof(header));
+		netPacket.SetPayloadData(&packet, header.len);
+
+		packetSize = netPacket.Size();
+		enqueueRet = session->_sendBuf.Enqueue(netPacket.GetBufferPtr(), packetSize);
+		if (enqueueRet != packetSize)
+		{
+			wprintf(L"# %d Session Enqueue Error\n", session->_id);
+			g_bRunning = false;
+			LeaveCriticalSection(&session->_lock);
+
+			return false;
+		}
+
+		SendPost(session);
+		LeaveCriticalSection(&session->_lock);
+
+		return true;
 	}
 
 	unsigned int WINAPI NetLib::AcceptProc(void* arg)
@@ -332,12 +369,65 @@ namespace Network
 
 	void NetLib::RecvHandler(Session* session, const DWORD byte)
 	{
+		size_t recvBufSize;
 
+		recvBufSize = session->_recvBuf.Size();
+		if (recvBufSize != byte)
+		{
+			wprintf(L"# %d Recv Buf Byte : %d, but Recv Data Byte : %d\n", recvBufSize, byte);
+			g_bRunning = false;
+			return;
+		}
+
+		while (true)
+		{
+			NetworkHeader header;
+			SPacket* contentsPacket;
+
+			if (recvBufSize < sizeof(NetworkHeader))
+			{
+				break;
+			}
+
+			session->_recvBuf.Peek((char*)&header, sizeof(NetworkHeader));
+
+			if (recvBufSize < sizeof(NetworkHeader) + header.len)
+			{
+				break;
+			}
+
+			contentsPacket = _sendPacketPool->Alloc();
+			contentsPacket->Clear();
+
+			session->_recvBuf.Dequeue(sizeof(NetworkHeader));
+			session->_recvBuf.Peek(contentsPacket->GetPayloadPtr(), header.len);
+			
+			OnRecv(session->_id, contentsPacket);
+
+			session->_recvBuf.Dequeue(header.len);
+			recvBufSize -= (sizeof(NetworkHeader) + header.len);
+		}
+
+		return;
 	}
 
 	void NetLib::SendHandler(Session* session, const DWORD byte)
 	{
+		size_t moveRet;
 
+		moveRet = session->_sendBuf.Dequeue(byte);
+		if (moveRet != byte)
+		{
+			wprintf(L"# %d Session Dequeue Error\n", session->_id);
+			g_bRunning = false;
+			return;
+		}
+
+		InterlockedExchange(&session->_sendFlag, 0);
+		OnSend(session->_id);
+		SendPost(session);
+
+		return;
 	}
 
 	void NetLib::ReleaseHandler(Session* session)

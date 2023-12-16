@@ -106,8 +106,6 @@ namespace MyDataStructure
 
 	size_t RingBuffer::Dequeue(size_t size)
 	{
-		const size_t DIRECT_DEQUEUE_SIZE = DirectDequeueSize();
-
 		// if Dequeuing size is bigger than stored size, dequeuing size is decreased by stored size.
 		if (mSize < size)
 		{
