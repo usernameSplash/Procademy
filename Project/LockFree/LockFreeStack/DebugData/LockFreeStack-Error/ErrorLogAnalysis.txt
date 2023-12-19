@@ -1,0 +1,14 @@
+042e 스레드에서 5027 pop, new head : d01a
+0828 스레드에서 c048 push, head's next : d01a
+2046 스레드에서 c048 pop, new head : d01a
+2046 스레드에서 d01a pop, new head : 902c
+0828 스레드에서 c048 push, head's next : 902c
+042e 스레드에서 c048 pop, new head : d01a <- 여기서 1차적 문제 발생. 이전에 pop된 노드의 주소가 새로운 head가 됨.
+
+--------
+
+2046 스레드에서 d01a pop, new head : dddd (invalid address, 이미 할당 해제된 노드이기 때문에 new head가 dddd)
+0828 스레드에서 d01a push, head's next : dddd (push에선 head포인터 역참조는 하지 않아 에러가 발생하지는 않았음.)
+2046 스레드에서 d01a pop, new head : dddd
+
+042e 스레드에서 pop 시도 중, top이 dddd여서 에러 발생
