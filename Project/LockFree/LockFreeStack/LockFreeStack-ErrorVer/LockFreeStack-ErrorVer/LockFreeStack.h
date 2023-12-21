@@ -27,9 +27,9 @@ public:
 		while (curNode != nullptr)
 		{
 			Node* deleteNode = curNode;
-			delete deleteNode;
-
 			curNode = curNode->_next;
+
+			delete deleteNode;
 		}
 	}
 
