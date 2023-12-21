@@ -17,6 +17,12 @@
     <ClCompile Include="SessionManager.cpp">
       <Filter>Network</Filter>
     </ClCompile>
+    <ClCompile Include="Job.cpp">
+      <Filter>Contents</Filter>
+    </ClCompile>
+    <ClCompile Include="EchoServer.cpp">
+      <Filter>Contents</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Network">
@@ -24,6 +30,9 @@
     </Filter>
     <Filter Include="Util">
       <UniqueIdentifier>{0198e9b9-7917-4c5f-a206-bbf4d17e9e05}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Contents">
+      <UniqueIdentifier>{adb37718-8225-411e-9a5d-17ef96a70f8f}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -48,6 +57,12 @@
     </ClInclude>
     <ClInclude Include="NetworkProtocol.h">
       <Filter>Network</Filter>
+    </ClInclude>
+    <ClInclude Include="Job.h">
+      <Filter>Contents</Filter>
+    </ClInclude>
+    <ClInclude Include="EchoServer.h">
+      <Filter>Contents</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

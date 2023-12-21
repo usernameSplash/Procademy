@@ -137,6 +137,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="EchoServer.cpp" />
+    <ClCompile Include="Job.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="NetLib.cpp" />
     <ClCompile Include="RingBuffer.cpp" />
@@ -145,6 +147,8 @@
     <ClCompile Include="SessionManager.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="EchoServer.h" />
+    <ClInclude Include="Job.h" />
     <ClInclude Include="main.h" />
     <ClInclude Include="NetLib.h" />
     <ClInclude Include="NetworkProtocol.h" />
