@@ -23,12 +23,13 @@ public:
 	LockFreePool(size_t capacity, Types... args);
 	~LockFreePool();
 
-	template<typename... Types>
-	T* Alloc(Types... args);
+	T* Alloc(void);
 	void Free(T* obj);
 
-private:
+public:
 	__int64 _top;
+
+private:
 	__int64 _key;
 	size_t _capacity;
 };
@@ -91,8 +92,7 @@ LockFreePool<T>::~LockFreePool()
 }
 
 template<typename T>
-template<typename... Types>
-T* LockFreePool<T>::Alloc(Types... args)
+T* LockFreePool<T>::Alloc(void)
 {
 	__int64 tempTop;
 	__int64 next;
@@ -102,13 +102,16 @@ T* LockFreePool<T>::Alloc(Types... args)
 	do
 	{
 		tempTop = _top;
-		curNode = (Node*)GET_PTR(tempTop);
-		next = curNode->_next;
 
 		if (tempTop == NULL)
 		{
+			int* p = nullptr;
+			*p = 0;
 			return NULL;
 		}
+
+		curNode = (Node*)GET_PTR(tempTop);
+		next = curNode->_next;
 
 	} while (InterlockedCompareExchange64(&_top, next, tempTop) != tempTop);
 

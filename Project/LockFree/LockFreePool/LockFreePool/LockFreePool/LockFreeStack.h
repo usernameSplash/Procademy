@@ -22,7 +22,7 @@ public:
 		: _top(NULL)
 		, _key(0)
 	{
-		_pool = new LockFreePool<Node>(1000000);
+		_pool = new LockFreePool<Node>(10000);
 	}
 
 	~LockFreeStack()
@@ -59,13 +59,18 @@ void LockFreeStack<T>::Push(T data)
 	newNode = _pool->Alloc();
 	newNode->_value = data;
 
-	newTop = (__int64)newNode;
+	newTop = GET_PTR((__int64)newNode);
 	newTop = ((key << POOL_KEY_BITMASK_64BIT) | newTop);
 
 	do
 	{
 		tempTop = _top;
 		newNode->_next = tempTop;
+
+		if (GET_PTR(tempTop) == GET_PTR(newTop))
+		{
+			__debugbreak();
+		}
 	} while (InterlockedCompareExchange64(&_top, newTop, tempTop) != tempTop);
 
 	__int64 idx = InterlockedIncrement64(&g_logIndex);
@@ -89,6 +94,11 @@ T LockFreeStack<T>::Pop(void)
 		tempTop = _top;
 		curNode = (Node*)GET_PTR(tempTop);
 		next = curNode->_next;
+
+		if (tempTop == next)
+		{
+			__debugbreak();
+		}
 	} while (InterlockedCompareExchange64(&_top, next, tempTop) != tempTop);
 
 	data = curNode->_value;
