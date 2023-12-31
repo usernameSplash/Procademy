@@ -37,7 +37,9 @@ private:
 template<typename T>
 template<typename... Types>
 LockFreePool<T>::LockFreePool(size_t capacity, Types... args)
-	: _capacity(capacity)
+	: _top(NULL)
+	, _key(-1)
+	, _capacity(capacity)
 {
 	SYSTEM_INFO info;
 	GetSystemInfo(&info);
@@ -57,10 +59,7 @@ LockFreePool<T>::LockFreePool(size_t capacity, Types... args)
 		return;
 	}
 
-	_top = NULL;
-	_key = 0;
-
-	__int64 key = 0;
+	__int64 key;
 
 	for (size_t iCnt = 0; iCnt < capacity; ++iCnt)
 	{
@@ -115,6 +114,11 @@ T* LockFreePool<T>::Alloc(void)
 
 	} while (InterlockedCompareExchange64(&_top, next, tempTop) != tempTop);
 
+	if (GET_PTR(tempTop) == GET_PTR(next))
+	{
+		__debugbreak();
+	}
+
 	ptr = &(curNode->_value);
 
 	return ptr;
@@ -140,6 +144,11 @@ void LockFreePool<T>::Free(T* obj)
 		tempTop = _top;
 		newNode->_next = tempTop;
 	} while (InterlockedCompareExchange64(&_top, newTop, tempTop) != tempTop);
+
+	if (GET_PTR(tempTop) == GET_PTR(newTop))
+	{
+		__debugbreak();
+	}
 
 	return;
 }

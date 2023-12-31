@@ -20,7 +20,7 @@ private:
 public:
 	LockFreeStack()
 		: _top(NULL)
-		, _key(0)
+		, _key(-1)
 	{
 		_pool = new LockFreePool<Node>(10000);
 	}
@@ -62,23 +62,28 @@ void LockFreeStack<T>::Push(T data)
 	newTop = GET_PTR((__int64)newNode);
 	newTop = ((key << POOL_KEY_BITMASK_64BIT) | newTop);
 
-	do
+	__int64 idx;
+	while (true)
 	{
 		tempTop = _top;
 		newNode->_next = tempTop;
 
-		if (GET_PTR(tempTop) == GET_PTR(newTop))
+		if (InterlockedCompareExchange64(&_top, newTop, tempTop) == tempTop)
 		{
-			__debugbreak();
+			//idx = InterlockedIncrement64(&g_logIndex);
+			break;
 		}
-	} while (InterlockedCompareExchange64(&_top, newTop, tempTop) != tempTop);
+	}
+	//g_logArray[idx % LOG_ARRAY_LEN]._idx = idx;
+	//g_logArray[idx % LOG_ARRAY_LEN]._threadId = GetCurrentThreadId();
+	//g_logArray[idx % LOG_ARRAY_LEN]._jobType = JOB_PUSH;
+	//g_logArray[idx % LOG_ARRAY_LEN]._nodePtr = (void*)newTop;
+	//g_logArray[idx % LOG_ARRAY_LEN]._nextPtr = (void*)tempTop;
 
-	__int64 idx = InterlockedIncrement64(&g_logIndex);
-	g_logArray[idx % LOG_ARRAY_LEN]._idx = idx;
-	g_logArray[idx % LOG_ARRAY_LEN]._threadId = GetCurrentThreadId();
-	g_logArray[idx % LOG_ARRAY_LEN]._jobType = JOB_PUSH;
-	g_logArray[idx % LOG_ARRAY_LEN]._nodePtr = (void*)newTop;
-	g_logArray[idx % LOG_ARRAY_LEN]._nextPtr = (void*)tempTop;
+	if (GET_PTR(tempTop) == GET_PTR(newTop))
+	{
+		__debugbreak();
+	}
 }
 
 template<typename T>
@@ -89,27 +94,33 @@ T LockFreeStack<T>::Pop(void)
 	Node* curNode;
 	T data;
 	
-	do
+	__int64 idx;
+	while (true)
 	{
 		tempTop = _top;
 		curNode = (Node*)GET_PTR(tempTop);
 		next = curNode->_next;
 
-		if (tempTop == next)
+		if (InterlockedCompareExchange64(&_top, next, tempTop) == tempTop)
 		{
-			__debugbreak();
+			//idx = InterlockedIncrement64(&g_logIndex);
+			break;
 		}
-	} while (InterlockedCompareExchange64(&_top, next, tempTop) != tempTop);
+	}
 
 	data = curNode->_value;
 	_pool->Free(curNode);
 	
-	__int64 idx = InterlockedIncrement64(&g_logIndex);
-	g_logArray[idx % LOG_ARRAY_LEN]._idx = idx;
-	g_logArray[idx % LOG_ARRAY_LEN]._threadId = GetCurrentThreadId();
-	g_logArray[idx % LOG_ARRAY_LEN]._jobType = JOB_POP;
-	g_logArray[idx % LOG_ARRAY_LEN]._nodePtr = (void*)tempTop;
-	g_logArray[idx % LOG_ARRAY_LEN]._nextPtr = (void*)next;
+	//g_logArray[idx % LOG_ARRAY_LEN]._idx = idx;
+	//g_logArray[idx % LOG_ARRAY_LEN]._threadId = GetCurrentThreadId();
+	//g_logArray[idx % LOG_ARRAY_LEN]._jobType = JOB_POP;
+	//g_logArray[idx % LOG_ARRAY_LEN]._nodePtr = (void*)tempTop;
+	//g_logArray[idx % LOG_ARRAY_LEN]._nextPtr = (void*)next;
+
+	if (GET_PTR(tempTop) == GET_PTR(next))
+	{
+		__debugbreak();
+	}
 
 	return data;
 }

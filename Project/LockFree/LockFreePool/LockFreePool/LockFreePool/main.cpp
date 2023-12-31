@@ -12,7 +12,7 @@ unsigned int WINAPI StackTest(void* arg);
 unsigned int WINAPI PoolTest(void* arg);
 
 static LockFreeStack<int> s_stack;
-static LockFreePool<int> s_pool(10000);
+static LockFreePool<int> s_pool(10000, true);
 
 __declspec(thread) int* arr[1000];	//worker thread test
 int* arr2[10000];					// main thread test
@@ -22,7 +22,7 @@ int wmain(void)
 {
 	HANDLE threads[THREAD_NUM];
 
-	for (int iCnt = 0; iCnt < THREAD_NUM; ++iCnt)
+	for (long long iCnt = 0; iCnt < THREAD_NUM; ++iCnt)
 	{
 		threads[iCnt] = (HANDLE)_beginthreadex(NULL, 0, StackTest, (void*)iCnt, 0, NULL);
 		if (threads[iCnt] == nullptr)
@@ -33,7 +33,7 @@ int wmain(void)
 
 	WaitForMultipleObjects(THREAD_NUM, threads, TRUE, INFINITE);
 
-	wprintf(L"Top Node : %lld\n", GET_PTR(s_stack._top));
+	wprintf(L"Top Node : %lld\n", s_stack._top);
 
 	//for (int iCnt = 0; iCnt < 10000; iCnt++)
 	//{
@@ -76,7 +76,7 @@ unsigned int WINAPI StackTest(void* arg)
 unsigned int WINAPI PoolTest(void* arg)
 {
 	wprintf(L"%d Thread Start\n", GetCurrentThreadId());
-	long long num = reinterpret_cast<long long>(arg);
+	int num = reinterpret_cast<int>(arg);
 
 	for (int repeatCnt = 0; repeatCnt < 1000000; ++repeatCnt)
 	{
