@@ -6,7 +6,7 @@
 
 #define POOL_KEY_BITMASK_64BIT 47
 #define GET_KEY(ptr) (((ptr) >> POOL_KEY_BITMASK_64BIT) & 0x1ffff)
-#define GET_PTR(ptr) ((ptr) & ~(0x00007fffffffffff))
+#define GET_PTR(ptr) ((ptr) & (0x00007fffffffffff))
 
 template<typename T>
 class LockFreePool
