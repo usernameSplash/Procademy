@@ -8,6 +8,8 @@
 #define GET_KEY(ptr) (((ptr) >> POOL_KEY_BITMASK_64BIT) & 0x1ffff)
 #define GET_PTR(ptr) ((ptr) & (0x00007fffffffffff))
 
+//#define __LOCK_FREE_DEBUG__
+
 template<typename T>
 class LockFreePool
 {
@@ -98,7 +100,17 @@ T* LockFreePool<T>::Alloc(void)
 	Node* curNode;
 	T* ptr;
 
-	do
+#ifdef __LOCK_FREE_DEBUG__
+	__int64 idx;
+	idx = InterlockedIncrement64(&g_logIndex);
+	g_logArray[idx % LOG_ARRAY_LEN]._idx = idx;
+	g_logArray[idx % LOG_ARRAY_LEN]._threadId = GetCurrentThreadId();
+	g_logArray[idx % LOG_ARRAY_LEN]._jobType = JOB_ALLOC;
+	g_logArray[idx % LOG_ARRAY_LEN]._nodePtr = 0;
+	g_logArray[idx % LOG_ARRAY_LEN]._nextPtr = 0;
+#endif
+
+	while (true)
 	{
 		tempTop = _top;
 
@@ -112,7 +124,23 @@ T* LockFreePool<T>::Alloc(void)
 		curNode = (Node*)GET_PTR(tempTop);
 		next = curNode->_next;
 
-	} while (InterlockedCompareExchange64(&_top, next, tempTop) != tempTop);
+		if (InterlockedCompareExchange64(&_top, next, tempTop) == tempTop)
+		{
+#ifdef __LOCK_FREE_DEBUG__
+			idx = InterlockedIncrement64(&g_logIndex);
+#endif
+			InterlockedIncrement64(&g_allocCnt);
+			break;
+		}
+	}
+
+#ifdef __LOCK_FREE_DEBUG__
+	g_logArray[idx % LOG_ARRAY_LEN]._idx = idx;
+	g_logArray[idx % LOG_ARRAY_LEN]._threadId = GetCurrentThreadId();
+	g_logArray[idx % LOG_ARRAY_LEN]._jobType = JOB_ALLOC;
+	g_logArray[idx % LOG_ARRAY_LEN]._nodePtr = (void*)tempTop;
+	g_logArray[idx % LOG_ARRAY_LEN]._nextPtr = (void*)next;
+#endif
 
 	if (GET_PTR(tempTop) == GET_PTR(next))
 	{
@@ -120,6 +148,7 @@ T* LockFreePool<T>::Alloc(void)
 	}
 
 	ptr = &(curNode->_value);
+	curNode->_next = 0;
 
 	return ptr;
 }
@@ -139,11 +168,38 @@ void LockFreePool<T>::Free(T* obj)
 	newNode = reinterpret_cast<Node*>(newTop);
 	newTop = ((key << POOL_KEY_BITMASK_64BIT) | newTop);
 
-	do
+#ifdef __LOCK_FREE_DEBUG__
+	__int64 idx;
+	idx = InterlockedIncrement64(&g_logIndex);
+	g_logArray[idx % LOG_ARRAY_LEN]._idx = idx;
+	g_logArray[idx % LOG_ARRAY_LEN]._threadId = GetCurrentThreadId();
+	g_logArray[idx % LOG_ARRAY_LEN]._jobType = JOB_FREE;
+	g_logArray[idx % LOG_ARRAY_LEN]._nodePtr = 0;
+	g_logArray[idx % LOG_ARRAY_LEN]._nextPtr = 0;
+#endif
+
+	while (true)
 	{
 		tempTop = _top;
 		newNode->_next = tempTop;
-	} while (InterlockedCompareExchange64(&_top, newTop, tempTop) != tempTop);
+
+		if ((InterlockedCompareExchange64(&_top, newTop, tempTop) == tempTop))
+		{
+#ifdef __LOCK_FREE_DEBUG__
+			idx = InterlockedIncrement64(&g_logIndex);
+#endif
+			InterlockedIncrement64(&g_freeCnt);
+			break;
+		}
+	}
+
+#ifdef __LOCK_FREE_DEBUG__
+	g_logArray[idx % LOG_ARRAY_LEN]._idx = idx;
+	g_logArray[idx % LOG_ARRAY_LEN]._threadId = GetCurrentThreadId();
+	g_logArray[idx % LOG_ARRAY_LEN]._jobType = JOB_FREE;
+	g_logArray[idx % LOG_ARRAY_LEN]._nodePtr = (void*)newTop;
+	g_logArray[idx % LOG_ARRAY_LEN]._nextPtr = (void*)tempTop;
+#endif
 
 	if (GET_PTR(tempTop) == GET_PTR(newTop))
 	{

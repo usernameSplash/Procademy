@@ -62,7 +62,16 @@ void LockFreeStack<T>::Push(T data)
 	newTop = GET_PTR((__int64)newNode);
 	newTop = ((key << POOL_KEY_BITMASK_64BIT) | newTop);
 
+#ifdef __LOCK_FREE_DEBUG__
 	__int64 idx;
+	idx = InterlockedIncrement64(&g_logIndex);
+	g_logArray[idx % LOG_ARRAY_LEN]._idx = idx;
+	g_logArray[idx % LOG_ARRAY_LEN]._threadId = GetCurrentThreadId();
+	g_logArray[idx % LOG_ARRAY_LEN]._jobType = JOB_PUSH;
+	g_logArray[idx % LOG_ARRAY_LEN]._nodePtr = 0;
+	g_logArray[idx % LOG_ARRAY_LEN]._nextPtr = 0;
+#endif
+
 	while (true)
 	{
 		tempTop = _top;
@@ -70,15 +79,21 @@ void LockFreeStack<T>::Push(T data)
 
 		if (InterlockedCompareExchange64(&_top, newTop, tempTop) == tempTop)
 		{
-			//idx = InterlockedIncrement64(&g_logIndex);
+#ifdef __LOCK_FREE_DEBUG__
+			idx = InterlockedIncrement64(&g_logIndex);
+#endif
+			InterlockedIncrement64(&g_pushCnt);
 			break;
 		}
 	}
-	//g_logArray[idx % LOG_ARRAY_LEN]._idx = idx;
-	//g_logArray[idx % LOG_ARRAY_LEN]._threadId = GetCurrentThreadId();
-	//g_logArray[idx % LOG_ARRAY_LEN]._jobType = JOB_PUSH;
-	//g_logArray[idx % LOG_ARRAY_LEN]._nodePtr = (void*)newTop;
-	//g_logArray[idx % LOG_ARRAY_LEN]._nextPtr = (void*)tempTop;
+
+#ifdef __LOCK_FREE_DEBUG__
+	g_logArray[idx % LOG_ARRAY_LEN]._idx = idx;
+	g_logArray[idx % LOG_ARRAY_LEN]._threadId = GetCurrentThreadId();
+	g_logArray[idx % LOG_ARRAY_LEN]._jobType = JOB_PUSH;
+	g_logArray[idx % LOG_ARRAY_LEN]._nodePtr = (void*)newTop;
+	g_logArray[idx % LOG_ARRAY_LEN]._nextPtr = (void*)tempTop;
+#endif
 
 	if (GET_PTR(tempTop) == GET_PTR(newTop))
 	{
@@ -94,7 +109,16 @@ T LockFreeStack<T>::Pop(void)
 	Node* curNode;
 	T data;
 	
+#ifdef __LOCK_FREE_DEBUG__
 	__int64 idx;
+	idx = InterlockedIncrement64(&g_logIndex);
+	g_logArray[idx % LOG_ARRAY_LEN]._idx = idx;
+	g_logArray[idx % LOG_ARRAY_LEN]._threadId = GetCurrentThreadId();
+	g_logArray[idx % LOG_ARRAY_LEN]._jobType = JOB_POP;
+	g_logArray[idx % LOG_ARRAY_LEN]._nodePtr = 0;
+	g_logArray[idx % LOG_ARRAY_LEN]._nextPtr = 0;
+#endif 
+
 	while (true)
 	{
 		tempTop = _top;
@@ -103,23 +127,35 @@ T LockFreeStack<T>::Pop(void)
 
 		if (InterlockedCompareExchange64(&_top, next, tempTop) == tempTop)
 		{
-			//idx = InterlockedIncrement64(&g_logIndex);
+#ifdef __LOCK_FREE_DEBUG__
+			idx = InterlockedIncrement64(&g_logIndex);
+#endif
+			InterlockedIncrement64(&g_popCnt);
 			break;
 		}
 	}
 
 	data = curNode->_value;
+	curNode->_next = 0;
 	_pool->Free(curNode);
 	
-	//g_logArray[idx % LOG_ARRAY_LEN]._idx = idx;
-	//g_logArray[idx % LOG_ARRAY_LEN]._threadId = GetCurrentThreadId();
-	//g_logArray[idx % LOG_ARRAY_LEN]._jobType = JOB_POP;
-	//g_logArray[idx % LOG_ARRAY_LEN]._nodePtr = (void*)tempTop;
-	//g_logArray[idx % LOG_ARRAY_LEN]._nextPtr = (void*)next;
+#ifdef __LOCK_FREE_DEBUG__
+	g_logArray[idx % LOG_ARRAY_LEN]._idx = idx;
+	g_logArray[idx % LOG_ARRAY_LEN]._threadId = GetCurrentThreadId();
+	g_logArray[idx % LOG_ARRAY_LEN]._jobType = JOB_POP;
+	g_logArray[idx % LOG_ARRAY_LEN]._nodePtr = (void*)tempTop;
+	g_logArray[idx % LOG_ARRAY_LEN]._nextPtr = (void*)next;
+#endif
 
 	if (GET_PTR(tempTop) == GET_PTR(next))
 	{
 		__debugbreak();
+	}
+
+	if (data != 1)
+	{
+		int* p = nullptr;
+		*p = 1;
 	}
 
 	return data;

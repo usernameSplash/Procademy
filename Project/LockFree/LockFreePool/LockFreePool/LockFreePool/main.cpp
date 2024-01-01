@@ -7,15 +7,16 @@
 
 #define THREAD_NUM 10
 #define LOOP_NUM 1000
+#define REPEAT_NUM 1000000
 
 unsigned int WINAPI StackTest(void* arg);
 unsigned int WINAPI PoolTest(void* arg);
 
 static LockFreeStack<int> s_stack;
-static LockFreePool<int> s_pool(10000, true);
+static LockFreePool<long long> s_pool(10000, true);
 
-__declspec(thread) int* arr[1000];	//worker thread test
-int* arr2[10000];					// main thread test
+__declspec(thread) long long* arr[1000];	//worker thread test
+long long* arr2[10000];					// main thread test
 
 
 int wmain(void)
@@ -39,7 +40,7 @@ int wmain(void)
 	//{
 	//	arr2[iCnt] = s_pool.Alloc();
 	//}
-
+	//wprintf(L"Top Node : %lld\n", s_pool._top);
 	//wprintf(L"Top Node : %lld\n", GET_PTR(s_pool._top));
 
 	return 0;
@@ -50,22 +51,27 @@ unsigned int WINAPI StackTest(void* arg)
 	wprintf(L"%d Thread Start\n", GetCurrentThreadId());
 	long long num = reinterpret_cast<long long>(arg);
 
-	for(int repeatCnt = 0; repeatCnt < 1000000; ++repeatCnt)
+	for(int repeatCnt = 0; repeatCnt < REPEAT_NUM; ++repeatCnt)
 	{
 		for (int iCnt = 0; iCnt < LOOP_NUM; ++iCnt)
 		{
-			s_stack.Push(num);
+			s_stack.Push(1);
 		}
 
 		for (int iCnt = 0; iCnt < LOOP_NUM; ++iCnt)
 		{
-			s_stack.Pop();
+			int ret = s_stack.Pop();
+			if (ret != 1)
+			{
+				int* p = nullptr;
+				*p = 1;
+			}
 		}
 
-		//if (repeatCnt % 10000 == 0)
-		//{
-		//	wprintf(L"%d\n", repeatCnt);
-		//}
+		if (repeatCnt % 10000 == 0)
+		{
+			wprintf(L"%d\n", repeatCnt);
+		}
 	}
 
 	wprintf(L"%d Thread End\n", GetCurrentThreadId());
@@ -76,9 +82,9 @@ unsigned int WINAPI StackTest(void* arg)
 unsigned int WINAPI PoolTest(void* arg)
 {
 	wprintf(L"%d Thread Start\n", GetCurrentThreadId());
-	int num = reinterpret_cast<int>(arg);
+	long long num = reinterpret_cast<long long>(arg);
 
-	for (int repeatCnt = 0; repeatCnt < 1000000; ++repeatCnt)
+	for (int repeatCnt = 0; repeatCnt < REPEAT_NUM; ++repeatCnt)
 	{
 		for (int iCnt = 0; iCnt < LOOP_NUM; ++iCnt)
 		{
