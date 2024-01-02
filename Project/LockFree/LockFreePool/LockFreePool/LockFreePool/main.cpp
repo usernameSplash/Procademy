@@ -7,10 +7,18 @@
 
 #define THREAD_NUM 10
 #define LOOP_NUM 1000
-#define REPEAT_NUM 1000000
+#define REPEAT_NUM 10000000
 
 unsigned int WINAPI StackTest(void* arg);
 unsigned int WINAPI PoolTest(void* arg);
+
+
+#define PUSH_CODE 0xabababababababab
+void MultiPushSinglePopTest(long long numEachThread);
+void SinglePushMultiPopTest(long long numEachThread);
+
+unsigned int WINAPI StackPushByNum(void* arg);
+unsigned int WINAPI StackPopByNum(void* arg);
 
 static LockFreeStack<int> s_stack;
 static LockFreePool<long long> s_pool(10000, true);
@@ -21,20 +29,23 @@ long long* arr2[10000];					// main thread test
 
 int wmain(void)
 {
-	HANDLE threads[THREAD_NUM];
+	MultiPushSinglePopTest(10000000);
+	SinglePushMultiPopTest(10000000);
 
-	for (long long iCnt = 0; iCnt < THREAD_NUM; ++iCnt)
-	{
-		threads[iCnt] = (HANDLE)_beginthreadex(NULL, 0, StackTest, (void*)iCnt, 0, NULL);
-		if (threads[iCnt] == nullptr)
-		{
-			__debugbreak();
-		}
-	}
+	//HANDLE threads[THREAD_NUM];
 
-	WaitForMultipleObjects(THREAD_NUM, threads, TRUE, INFINITE);
+	//for (long long iCnt = 0; iCnt < THREAD_NUM; ++iCnt)
+	//{
+	//	threads[iCnt] = (HANDLE)_beginthreadex(NULL, 0, StackTest, (void*)iCnt, 0, NULL);
+	//	if (threads[iCnt] == nullptr)
+	//	{
+	//		__debugbreak();
+	//	}
+	//}
 
-	wprintf(L"Top Node : %lld\n", s_stack._top);
+	//WaitForMultipleObjects(THREAD_NUM, threads, TRUE, INFINITE);
+
+	//wprintf(L"Top Node : %lld\n", s_stack._top);
 
 	//for (int iCnt = 0; iCnt < 10000; iCnt++)
 	//{
@@ -104,6 +115,115 @@ unsigned int WINAPI PoolTest(void* arg)
 	}
 
 	wprintf(L"%d Thread End\n", GetCurrentThreadId());
+
+	return 0;
+}
+
+void MultiPushSinglePopTest(long long numEachThread)
+{
+	HANDLE threads[THREAD_NUM];
+
+	LockFreeStack<long long>* stack = new LockFreeStack<long long>();
+	void* args[2];
+	args[0] = stack;
+	args[1] = (void*)numEachThread;
+
+	for (long long iCnt = 0; iCnt < THREAD_NUM; ++iCnt)
+	{
+		threads[iCnt] = (HANDLE)_beginthreadex(NULL, 0, StackPushByNum, args, 0, NULL);
+		if (threads[iCnt] == nullptr)
+		{
+			__debugbreak();
+		}
+	}
+
+	WaitForMultipleObjects(10, threads, TRUE, INFINITE);
+
+	wprintf(L"Stack Top Node : %llx\n", stack->_top);
+
+	for (long long iCnt = 0; iCnt < numEachThread * THREAD_NUM; ++iCnt)
+	{
+		long long ret = stack->Pop();
+		if (ret != PUSH_CODE)
+		{
+			wprintf(L"# PUSH_CODE Error in Main Thread : %lld\n", ret);
+			__debugbreak();
+			break;
+		}
+	}
+
+	wprintf(L"Stack Top Node : %llx\n", stack->_top);
+
+	return;
+}
+
+void SinglePushMultiPopTest(long long numEachThread)
+{
+	HANDLE threads[THREAD_NUM];
+
+	LockFreeStack<long long>* stack = new LockFreeStack<long long>();
+	void* args[2];
+	args[0] = stack;
+	args[1] = (void*)numEachThread;
+
+	for (long long iCnt = 0; iCnt < numEachThread * THREAD_NUM; ++iCnt)
+	{
+		stack->Push(PUSH_CODE);
+	}
+
+	wprintf(L"Stack Top Node : %llx\n", stack->_top);
+
+	for (long long iCnt = 0; iCnt < THREAD_NUM; ++iCnt)
+	{
+		threads[iCnt] = (HANDLE)_beginthreadex(NULL, 0, StackPopByNum, args, 0, NULL);
+		if (threads[iCnt] == nullptr)
+		{
+			__debugbreak();
+		}
+	}
+
+	WaitForMultipleObjects(10, threads, TRUE, INFINITE);
+
+	wprintf(L"Stack Top Node : %llx\n", stack->_top);
+	
+	return;
+}
+
+unsigned int WINAPI StackPushByNum(void* arg)
+{
+	void** arglist = (void**)arg;
+	LockFreeStack<long long>* stack;
+	long long num;
+
+	stack = (LockFreeStack<long long>*)arglist[0];
+	num = reinterpret_cast<long long>(arglist[1]);
+
+	for (long long iCnt = 0; iCnt < num; ++iCnt)
+	{
+		stack->Push(PUSH_CODE);
+	}
+
+	return 0;
+}
+
+unsigned int WINAPI StackPopByNum(void* arg)
+{
+	void** arglist = (void**)arg;
+	LockFreeStack<long long>* stack;
+	long long num;
+
+	stack = (LockFreeStack<long long>*)arglist[0];
+	num = reinterpret_cast<long long>(arglist[1]);
+
+	for (long long iCnt = 0; iCnt < num; ++iCnt)
+	{
+		long long ret = stack->Pop();
+		if (ret != PUSH_CODE)
+		{
+			__debugbreak();
+			break;
+		}
+	}
 
 	return 0;
 }

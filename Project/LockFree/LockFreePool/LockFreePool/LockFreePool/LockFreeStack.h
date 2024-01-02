@@ -22,7 +22,7 @@ public:
 		: _top(NULL)
 		, _key(-1)
 	{
-		_pool = new LockFreePool<Node>(10000);
+		_pool = new LockFreePool<Node>(100000000);
 	}
 
 	~LockFreeStack()
@@ -150,12 +150,6 @@ T LockFreeStack<T>::Pop(void)
 	if (GET_PTR(tempTop) == GET_PTR(next))
 	{
 		__debugbreak();
-	}
-
-	if (data != 1)
-	{
-		int* p = nullptr;
-		*p = 1;
 	}
 
 	return data;
