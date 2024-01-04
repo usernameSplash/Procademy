@@ -29,30 +29,39 @@ long long* arr2[10000];					// main thread test
 
 int wmain(void)
 {
-	MultiPushSinglePopTest(10000000);
-	SinglePushMultiPopTest(10000000);
+	//MultiPushSinglePopTest(10000000);
+	//SinglePushMultiPopTest(10000000);
 
-	//HANDLE threads[THREAD_NUM];
+	HANDLE threads[THREAD_NUM];
 
-	//for (long long iCnt = 0; iCnt < THREAD_NUM; ++iCnt)
-	//{
-	//	threads[iCnt] = (HANDLE)_beginthreadex(NULL, 0, StackTest, (void*)iCnt, 0, NULL);
-	//	if (threads[iCnt] == nullptr)
-	//	{
-	//		__debugbreak();
-	//	}
-	//}
+	for (long long iCnt = 0; iCnt < THREAD_NUM; ++iCnt)
+	{
+		//threads[iCnt] = (HANDLE)_beginthreadex(NULL, 0, StackTest, (void*)iCnt, 0, NULL);
+		threads[iCnt] = (HANDLE)_beginthreadex(NULL, 0, PoolTest, (void*)iCnt, 0, NULL);
+		if (threads[iCnt] == nullptr)
+		{
+			__debugbreak();
+		}
+	}
 
-	//WaitForMultipleObjects(THREAD_NUM, threads, TRUE, INFINITE);
+	WaitForMultipleObjects(THREAD_NUM, threads, TRUE, INFINITE);
 
-	//wprintf(L"Top Node : %lld\n", s_stack._top);
+	//wprintf(L"Top Node : %llx\n", s_stack._top);
 
-	//for (int iCnt = 0; iCnt < 10000; iCnt++)
-	//{
-	//	arr2[iCnt] = s_pool.Alloc();
-	//}
-	//wprintf(L"Top Node : %lld\n", s_pool._top);
-	//wprintf(L"Top Node : %lld\n", GET_PTR(s_pool._top));
+	wprintf(L"Top Node : %lld\n", s_pool._top);
+
+	wprintf(L"Alloc Cnt : %lld\n", g_allocCnt);
+	wprintf(L"Free Cnt : %lld\n", g_freeCnt);
+	wprintf(L"Alloc Cnt : %lld\n", g_pushCnt);
+	wprintf(L"Alloc Cnt : %lld\n", g_popCnt);
+
+	for (int iCnt = 0; iCnt < 10000; iCnt++)
+	{
+		arr2[iCnt] = s_pool.Alloc();
+	}
+	wprintf(L"Top Node : %llx\n", s_pool._top);
+
+
 
 	return 0;
 }
