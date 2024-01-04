@@ -5,67 +5,66 @@
 #include <Windows.h>
 #include <process.h>
 
-#define THREAD_NUM 10
-#define LOOP_NUM 1000
+#define THREAD_NUM (10)
+#define REPEAT_NUM (1000000)
+#define LOOP_NUM (3)
+#define VALUE_KEY (0xff)
 
-unsigned int WINAPI StackTest(void* arg);
-unsigned int WINAPI PoolTest(void* arg);
-
-static LockFreeQueue<int> s_queue;
-
+void QueueTest(int threadNum);
+unsigned int WINAPI QueueTestWorkerThread(void* arg);
 
 int wmain(void)
 {
-	HANDLE threads[THREAD_NUM];
+	QueueTest(THREAD_NUM);
+}
 
-	for (long long iCnt = 0; iCnt < THREAD_NUM; ++iCnt)
+void QueueTest(int threadNum)
+{
+	LockFreeQueue<int>* queue = new LockFreeQueue<int>(threadNum * LOOP_NUM);
+
+	HANDLE* threads = new HANDLE[threadNum];
+
+	for (int iCnt = 0; iCnt < threadNum; ++iCnt)
 	{
-		threads[iCnt] = (HANDLE)_beginthreadex(NULL, 0, StackTest, (void*)iCnt, 0, NULL);
-		if (threads[iCnt] == nullptr)
+		threads[iCnt] = (HANDLE)_beginthreadex(NULL, 0, QueueTestWorkerThread, (void*)queue, NULL, NULL);
+		if (threads[iCnt] == NULL)
 		{
+			wprintf(L"# Begin Thread Failed");
 			__debugbreak();
 		}
 	}
 
-	WaitForMultipleObjects(THREAD_NUM, threads, TRUE, INFINITE);
+	WaitForMultipleObjects(threadNum, threads, TRUE, INFINITE);
 
-	wprintf(L"Head Node : %lld\n", s_queue._head);
-	wprintf(L"Tail Node : %lld\n", s_queue._tail);
-
-	//for (int iCnt = 0; iCnt < 10000; iCnt++)
-	//{
-	//	arr2[iCnt] = s_pool.Alloc();
-	//}
-
-	//wprintf(L"Top Node : %lld\n", GET_PTR(s_pool._top));
-
-	return 0;
+	return;
 }
 
-unsigned int WINAPI StackTest(void* arg)
+unsigned int WINAPI QueueTestWorkerThread(void* arg)
 {
-	wprintf(L"%d Thread Start\n", GetCurrentThreadId());
-	long long num = reinterpret_cast<long long>(arg);
+	LockFreeQueue<int>* queue = (LockFreeQueue<int>*)arg;
 
-	for(int repeatCnt = 0; repeatCnt < 1000000; ++repeatCnt)
+	wprintf(L"Thread %d Start\n", GetCurrentThreadId());
+
+	for (int repeatCnt = 0; repeatCnt < REPEAT_NUM; ++repeatCnt)
 	{
 		for (int iCnt = 0; iCnt < LOOP_NUM; ++iCnt)
 		{
-			s_queue.Enqueue(num);
+			queue->Enqueue(VALUE_KEY + iCnt);
 		}
+
+		Sleep(0);
 
 		for (int iCnt = 0; iCnt < LOOP_NUM; ++iCnt)
 		{
-			s_queue.Dequeue();
+			int value = queue->Dequeue();
+			if (value >= VALUE_KEY + LOOP_NUM || value < VALUE_KEY)
+			{
+				__debugbreak();
+			}
 		}
-
-		//if (repeatCnt % 10000 == 0)
-		//{
-		//	wprintf(L"%d\n", repeatCnt);
-		//}
 	}
 
-	wprintf(L"%d Thread End\n", GetCurrentThreadId());
+	wprintf(L"Thread %d End\n", GetCurrentThreadId());
 
 	return 0;
 }
