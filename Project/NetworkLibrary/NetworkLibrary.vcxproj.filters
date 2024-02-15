@@ -1,0 +1,66 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="ClassHeader">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="Source">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Utils">
+      <UniqueIdentifier>{f7e2e5a4-7bd1-4a82-8d0d-87c9671e0f75}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="DataStructure">
+      <UniqueIdentifier>{502f3daa-dd6b-4f6c-af62-3f919512fdd6}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="INetServer.h">
+      <Filter>ClassHeader</Filter>
+    </ClInclude>
+    <ClInclude Include="ILanServer.h">
+      <Filter>ClassHeader</Filter>
+    </ClInclude>
+    <ClInclude Include="Session.h">
+      <Filter>ClassHeader</Filter>
+    </ClInclude>
+    <ClInclude Include="LockFreeStack.h">
+      <Filter>DataStructure</Filter>
+    </ClInclude>
+    <ClInclude Include="LockFreeQueue.h">
+      <Filter>DataStructure</Filter>
+    </ClInclude>
+    <ClInclude Include="RingBuffer.h">
+      <Filter>DataStructure</Filter>
+    </ClInclude>
+    <ClInclude Include="ObjectPool.h">
+      <Filter>DataStructure</Filter>
+    </ClInclude>
+    <ClInclude Include="SPacket.h">
+      <Filter>DataStructure</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="INetServer.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="ILanServer.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="ServerConfig.h">
+      <Filter>Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="RingBuffer.cpp">
+      <Filter>DataStructure</Filter>
+    </ClCompile>
+    <ClCompile Include="Session.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="SPacket.cpp">
+      <Filter>DataStructure</Filter>
+    </ClCompile>
+    <ClCompile Include="main.cpp" />
+  </ItemGroup>
+</Project>
