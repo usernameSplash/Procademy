@@ -1,0 +1,166 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="소스 파일">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="NetLib">
+      <UniqueIdentifier>{44ddbad2-87b2-4c52-97be-d7d2f2984ca6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="NetLib\LanServer">
+      <UniqueIdentifier>{e338e05a-38f7-4c55-8b68-b3353d3e5be0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="NetLib\NetServer">
+      <UniqueIdentifier>{36bc4b7e-6004-4093-9703-6ed7b3d0b8f0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="DataStructure">
+      <UniqueIdentifier>{55d27ba9-b8bd-441a-8b23-95637fa1a392}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Service">
+      <UniqueIdentifier>{12fe38d9-19e7-46ac-ba4e-6d6714df00e1}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="CProfiler.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="CSystemLog.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Main.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="CLanMsg.cpp">
+      <Filter>NetLib\LanServer</Filter>
+    </ClCompile>
+    <ClCompile Include="CLanRecvPacket.cpp">
+      <Filter>NetLib\LanServer</Filter>
+    </ClCompile>
+    <ClCompile Include="CLanSendPacket.cpp">
+      <Filter>NetLib\LanServer</Filter>
+    </ClCompile>
+    <ClCompile Include="CLanServer.cpp">
+      <Filter>NetLib\LanServer</Filter>
+    </ClCompile>
+    <ClCompile Include="CLanClient.cpp">
+      <Filter>NetLib\LanServer</Filter>
+    </ClCompile>
+    <ClCompile Include="CNetMsg.cpp">
+      <Filter>NetLib\NetServer</Filter>
+    </ClCompile>
+    <ClCompile Include="CNetRecvPacket.cpp">
+      <Filter>NetLib\NetServer</Filter>
+    </ClCompile>
+    <ClCompile Include="CNetSendPacket.cpp">
+      <Filter>NetLib\NetServer</Filter>
+    </ClCompile>
+    <ClCompile Include="CNetServer.cpp">
+      <Filter>NetLib\NetServer</Filter>
+    </ClCompile>
+    <ClCompile Include="CChattingServer.cpp">
+      <Filter>Service</Filter>
+    </ClCompile>
+    <ClCompile Include="CMonitorClient.cpp">
+      <Filter>Service</Filter>
+    </ClCompile>
+    <ClCompile Include="CMonitorManager.cpp">
+      <Filter>Service</Filter>
+    </ClCompile>
+    <ClCompile Include="CPlayer.cpp">
+      <Filter>Service</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="CProfiler.h">
+      <Filter>소스 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="CSystemLog.h">
+      <Filter>소스 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="ErrorCode.h">
+      <Filter>소스 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Utils.h">
+      <Filter>소스 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="CLanSession.h">
+      <Filter>NetLib\LanServer</Filter>
+    </ClInclude>
+    <ClInclude Include="CLanClient.h">
+      <Filter>NetLib\LanServer</Filter>
+    </ClInclude>
+    <ClInclude Include="CLanJob.h">
+      <Filter>NetLib\LanServer</Filter>
+    </ClInclude>
+    <ClInclude Include="CLanMsg.h">
+      <Filter>NetLib\LanServer</Filter>
+    </ClInclude>
+    <ClInclude Include="CLanRecvPacket.h">
+      <Filter>NetLib\LanServer</Filter>
+    </ClInclude>
+    <ClInclude Include="CLanSendPacket.h">
+      <Filter>NetLib\LanServer</Filter>
+    </ClInclude>
+    <ClInclude Include="CLanServer.h">
+      <Filter>NetLib\LanServer</Filter>
+    </ClInclude>
+    <ClInclude Include="CNetJob.h">
+      <Filter>NetLib\NetServer</Filter>
+    </ClInclude>
+    <ClInclude Include="CNetMsg.h">
+      <Filter>NetLib\NetServer</Filter>
+    </ClInclude>
+    <ClInclude Include="CNetRecvPacket.h">
+      <Filter>NetLib\NetServer</Filter>
+    </ClInclude>
+    <ClInclude Include="CNetSendPacket.h">
+      <Filter>NetLib\NetServer</Filter>
+    </ClInclude>
+    <ClInclude Include="CNetServer.h">
+      <Filter>NetLib\NetServer</Filter>
+    </ClInclude>
+    <ClInclude Include="CNetSession.h">
+      <Filter>NetLib\NetServer</Filter>
+    </ClInclude>
+    <ClInclude Include="CTlsPool.h">
+      <Filter>DataStructure</Filter>
+    </ClInclude>
+    <ClInclude Include="CLockFreeQueue.h">
+      <Filter>DataStructure</Filter>
+    </ClInclude>
+    <ClInclude Include="CLockFreeStack.h">
+      <Filter>DataStructure</Filter>
+    </ClInclude>
+    <ClInclude Include="CChattingServer.h">
+      <Filter>Service</Filter>
+    </ClInclude>
+    <ClInclude Include="CClientSession.h">
+      <Filter>Service</Filter>
+    </ClInclude>
+    <ClInclude Include="CCrashDump.h">
+      <Filter>Service</Filter>
+    </ClInclude>
+    <ClInclude Include="CMonitorClient.h">
+      <Filter>Service</Filter>
+    </ClInclude>
+    <ClInclude Include="CMonitorManager.h">
+      <Filter>Service</Filter>
+    </ClInclude>
+    <ClInclude Include="CObjectPool.h">
+      <Filter>Service</Filter>
+    </ClInclude>
+    <ClInclude Include="CommonProtocol.h">
+      <Filter>Service</Filter>
+    </ClInclude>
+    <ClInclude Include="Config.h">
+      <Filter>Service</Filter>
+    </ClInclude>
+    <ClInclude Include="CPlayer.h">
+      <Filter>Service</Filter>
+    </ClInclude>
+    <ClInclude Include="CSector.h">
+      <Filter>Service</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

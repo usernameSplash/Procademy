@@ -1,0 +1,88 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="NetworkLibrary">
+      <UniqueIdentifier>{1bb58864-3697-49eb-800f-67141d8ca2eb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="NetworkLibrary\NetworkCore">
+      <UniqueIdentifier>{6996ebeb-f72c-468c-a306-4931a41d063c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="NetworkLibrary\DataStructure">
+      <UniqueIdentifier>{709a6d43-457b-4867-8885-815b3c12bf72}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Contents">
+      <UniqueIdentifier>{6a02f771-4ea1-4ec3-bd54-a96a07347822}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="ILanServer.cpp">
+      <Filter>NetworkLibrary\NetworkCore</Filter>
+    </ClCompile>
+    <ClCompile Include="INetServer.cpp">
+      <Filter>NetworkLibrary\NetworkCore</Filter>
+    </ClCompile>
+    <ClCompile Include="Session.cpp">
+      <Filter>NetworkLibrary\NetworkCore</Filter>
+    </ClCompile>
+    <ClCompile Include="SPacket.cpp">
+      <Filter>NetworkLibrary\NetworkCore</Filter>
+    </ClCompile>
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="RingBuffer.cpp">
+      <Filter>NetworkLibrary\DataStructure</Filter>
+    </ClCompile>
+    <ClCompile Include="ChattingServer.cpp">
+      <Filter>Contents</Filter>
+    </ClCompile>
+    <ClCompile Include="LogData.cpp">
+      <Filter>NetworkLibrary\DataStructure</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="ServerConfig.h">
+      <Filter>NetworkLibrary</Filter>
+    </ClInclude>
+    <ClInclude Include="ILanServer.h">
+      <Filter>NetworkLibrary\NetworkCore</Filter>
+    </ClInclude>
+    <ClInclude Include="INetServer.h">
+      <Filter>NetworkLibrary\NetworkCore</Filter>
+    </ClInclude>
+    <ClInclude Include="Session.h">
+      <Filter>NetworkLibrary\NetworkCore</Filter>
+    </ClInclude>
+    <ClInclude Include="SPacket.h">
+      <Filter>NetworkLibrary\NetworkCore</Filter>
+    </ClInclude>
+    <ClInclude Include="LockFreeQueue.h">
+      <Filter>NetworkLibrary\DataStructure</Filter>
+    </ClInclude>
+    <ClInclude Include="LockFreeStack.h">
+      <Filter>NetworkLibrary\DataStructure</Filter>
+    </ClInclude>
+    <ClInclude Include="ObjectPool.h">
+      <Filter>NetworkLibrary\DataStructure</Filter>
+    </ClInclude>
+    <ClInclude Include="RingBuffer.h">
+      <Filter>NetworkLibrary\DataStructure</Filter>
+    </ClInclude>
+    <ClInclude Include="ChattingServer.h">
+      <Filter>Contents</Filter>
+    </ClInclude>
+    <ClInclude Include="Region.h">
+      <Filter>Contents</Filter>
+    </ClInclude>
+    <ClInclude Include="Player.h">
+      <Filter>Contents</Filter>
+    </ClInclude>
+    <ClInclude Include="Job.h">
+      <Filter>Contents</Filter>
+    </ClInclude>
+    <ClInclude Include="Protocol.h">
+      <Filter>Contents</Filter>
+    </ClInclude>
+    <ClInclude Include="LogData.h">
+      <Filter>NetworkLibrary\DataStructure</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>
