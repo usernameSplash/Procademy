@@ -1,7 +1,7 @@
 ﻿
 #include <stdio.h>
 #include <process.h>
-#include <time.h>
+//#include <time.h>
 #include <Windows.h>
 
 #pragma comment(lib, "winmm.lib")
@@ -21,13 +21,13 @@ unsigned WINAPI Lock0(void* arg)
 		turn = 0;
 		while (flag[1] && turn == 0)
 		{
-			if (debug == 0xff)
-			{
-				printf("%s: flag[%d, %d], turn - %d\n",
-					__func__, flag[0], flag[1], turn);
-				__debugbreak();
-			}
-			debug |= 0x0f;
+			//if (debug == 0xff)
+			//{
+			//	//printf("%s: flag[%d, %d], turn - %d\n",
+			//	//	__func__, flag[0], flag[1], turn);
+			//	//__debugbreak();
+			//}
+			//debug |= 0x0f;
 		}
 		debug &= 0xf0;
 		cnt++;
@@ -44,13 +44,13 @@ unsigned WINAPI Lock1(void* arg)
 		turn = 1;
 		while (flag[0] && turn == 1)
 		{
-			if (debug == 0xff)
-			{
-				printf("%s: flag[%d, %d], turn - %d\n",
-					__func__, flag[0], flag[1], turn);
-				__debugbreak();
-			}
-			debug |= 0xf0;
+			//if (debug == 0xff)
+			//{
+			//	//printf("%s: flag[%d, %d], turn - %d\n",
+			//	//	__func__, flag[0], flag[1], turn);
+			//	//__debugbreak();
+			//}
+			//debug |= 0xf0;
 		}
 		debug &= 0x0f;
 		cnt++;
